@@ -25,7 +25,7 @@ export function UnlockButton() {
       <button onClick={startCheckout} disabled={loading} className="btn">
         {loading ? "Presmerúvam na platbu…" : "Zaplatiť cez Stripe"}
       </button>
-      {error && <p className="mt-2 text-xs text-[#d98d8d]">{error}</p>}
+      {error && <p className="mt-3 text-xs text-[#d98d8d]">{error}</p>}
     </div>
   );
 }

@@ -43,7 +43,7 @@ function SortableRow({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
-      className="flex items-center gap-2"
+      className="flex items-center gap-3"
     >
       <DragHandle attributes={attributes} listeners={listeners} />
       <input type="hidden" name="action_step_ids[]" value={row.id} />
@@ -101,7 +101,7 @@ export function ActionStepsEditor({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <DndContext id="action-steps" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={rows.map((r) => r.key)} strategy={verticalListSortingStrategy}>
           {rows.map((row) => (

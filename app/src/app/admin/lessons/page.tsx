@@ -16,8 +16,8 @@ export default async function AdminLessonsPage() {
   return (
     <>
       <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
-      <main className="wrap py-12">
-        <div className="eyebrow mb-4">Administrácia</div>
+      <main className="wrap py-16">
+        <div className="eyebrow mb-6">Administrácia</div>
         <div className="flex items-center justify-between">
           <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Lekcie</h1>
           <Link href="/admin/lessons/new" className="btn btn-sm">
@@ -25,7 +25,7 @@ export default async function AdminLessonsPage() {
           </Link>
         </div>
         <AdminNav active="/admin/lessons" />
-        <p className="mb-6 text-sm text-muted">
+        <p className="mb-8 text-sm text-muted">
           Potiahni kartu za úchytku vpravo hore, aby si zmenil poradie dní.
         </p>
 

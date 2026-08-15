@@ -16,7 +16,7 @@ function formatUnlockDate(date: Date): string {
 function PlayIcon() {
   return (
     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold shadow-[0_0_26px_rgba(201,161,48,0.4)]">
-      <svg width="16" height="16" viewBox="0 0 24 24" className="ml-0.5 fill-bg">
+      <svg width="16" height="16" viewBox="0 0 24 24" className="ml-1.5 fill-bg">
         <path d="M8 5v14l11-7z" />
       </svg>
     </div>
@@ -77,7 +77,7 @@ export function LessonGridCard({ entry }: { entry: LessonWithState }) {
       }`}
     >
       {thumbnail}
-      <div className="flex flex-1 flex-col gap-3 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-8">
         <div className="flex items-center justify-between">
           <span className="font-label text-[13px] tracking-wide text-muted">
             Deň {lesson.day_number}

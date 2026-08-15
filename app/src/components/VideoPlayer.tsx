@@ -124,13 +124,13 @@ export function VideoPlayer({
         }}
         className="aspect-video w-full rounded-sm bg-bg-alt"
       />
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-card-line">
+      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-card-line">
         <div
           className="h-full bg-gold transition-[width]"
           style={{ width: `${percent}%` }}
         />
       </div>
-      <p className="mt-1.5 text-xs text-muted">
+      <p className="mt-2.5 text-xs text-muted">
         {watched ? "Video dopozerané ✓" : `Odsledované ${percent}%`}
       </p>
     </div>

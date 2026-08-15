@@ -48,8 +48,8 @@ export function CommentsSection({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <form onSubmit={post} className="flex flex-col gap-3">
+    <div className="flex flex-col gap-8">
+      <form onSubmit={post} className="flex flex-col gap-4">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -61,12 +61,12 @@ export function CommentsSection({
         </button>
       </form>
 
-      <ul className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-6">
         {comments.length === 0 && (
           <li className="text-sm text-muted">Zatiaľ žiadne komentáre — buď prvý.</li>
         )}
         {comments.map((c) => (
-          <li key={c.id} className="flex gap-3">
+          <li key={c.id} className="flex gap-4">
             {c.author_avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={c.author_avatar} alt="" width={32} height={32} className="rounded-full border border-card-line" />
@@ -74,7 +74,7 @@ export function CommentsSection({
               <div className="h-8 w-8 shrink-0 rounded-full border border-card-line bg-card" />
             )}
             <div className="flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-cream">{c.author_name ?? "Člen"}</span>
                 <span className="text-xs text-muted">
                   {new Date(c.created_at).toLocaleDateString("sk-SK")}
@@ -88,7 +88,7 @@ export function CommentsSection({
                   </button>
                 )}
               </div>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{c.body}</p>
+              <p className="mt-2.5 text-sm leading-relaxed text-muted">{c.body}</p>
             </div>
           </li>
         ))}

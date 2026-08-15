@@ -82,7 +82,7 @@ export function SortableLessonsGrid({ initialLessons }: { initialLessons: Lesson
   return (
     <DndContext id="lessons" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={lessons.map((l) => l.id)} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
           {lessons.map((l) => (
             <SortableCard key={l.id} lesson={l} />
           ))}

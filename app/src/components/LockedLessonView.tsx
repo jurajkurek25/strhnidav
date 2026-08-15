@@ -12,7 +12,7 @@ export function LockedLessonView({
   dayNumber: number;
 }) {
   return (
-    <div className="card flex flex-col items-center gap-5 px-6 py-16 text-center">
+    <div className="card flex flex-col items-center gap-7 px-8 py-24 text-center">
       <div
         aria-hidden
         className="flex aspect-video w-full max-w-xl flex-1 items-center justify-center rounded-sm"

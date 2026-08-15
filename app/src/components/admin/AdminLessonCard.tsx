@@ -52,15 +52,15 @@ export function AdminLessonCard({
             </div>
           )}
         </Link>
-        <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-sm bg-bg/80 px-2 py-1 font-label text-[12px] tracking-wide text-cream">
+        <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-sm bg-bg/80 px-3 py-2 font-label text-[12px] tracking-wide text-cream">
           Deň {lesson.day_number}
         </span>
         {dragHandle && (
-          <span className="absolute right-2.5 top-2.5 rounded-sm bg-bg/80 p-1">{dragHandle}</span>
+          <span className="absolute right-2.5 top-2.5 rounded-sm bg-bg/80 p-2">{dragHandle}</span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3.5 p-6">
+      <div className="flex flex-1 flex-col gap-5 p-8">
         <Link
           href={`/admin/lessons/${lesson.id}`}
           className="font-display text-[16px] font-medium leading-snug text-cream hover:text-gold-bright line-clamp-2"
@@ -68,7 +68,7 @@ export function AdminLessonCard({
           {lesson.title}
         </Link>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           <span className="tag tag-muted">{lesson.sectionTitle ?? "Bez sekcie"}</span>
           <span className="tag tag-muted">{TASK_LABELS[lesson.task_type] ?? lesson.task_type}</span>
           <span className={`tag ${lesson.is_free ? "tag-good" : "tag-bad"}`}>
@@ -77,7 +77,7 @@ export function AdminLessonCard({
           {!lesson.hls_ready && <span className="tag tag-muted">video chýba</span>}
         </div>
 
-        <form action={deleteLesson.bind(null, lesson.id)} className="mt-auto pt-1">
+        <form action={deleteLesson.bind(null, lesson.id)} className="mt-auto pt-2">
           <button type="submit" className="btn btn-danger btn-sm">
             Zmazať
           </button>

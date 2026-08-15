@@ -16,12 +16,12 @@ export default async function AdminSectionsPage() {
   return (
     <>
       <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
-      <main className="wrap py-12">
-        <div className="eyebrow mb-4">Administrácia</div>
+      <main className="wrap py-16">
+        <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Sekcie kurzu</h1>
         <AdminNav active="/admin/sections" />
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
           <SortableSections
             initialSections={(sections ?? []).map((s) => ({
               id: s.id,
@@ -31,7 +31,7 @@ export default async function AdminSectionsPage() {
             }))}
           />
 
-          <form action={createSection} className="card flex flex-col gap-3 p-5 h-fit">
+          <form action={createSection} className="card flex flex-col gap-4 p-7 h-fit">
             <h2 className="font-display text-base font-medium">Nová sekcia</h2>
             <input type="text" name="title" placeholder="Názov (napr. Randenie)" required />
             <textarea name="description" placeholder="Krátky popis (nepovinné)" rows={2} />

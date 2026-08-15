@@ -13,17 +13,17 @@ export function Header({
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-card-line bg-bg/85 backdrop-blur-md">
-      <nav className="wrap flex items-center justify-between py-4">
+      <nav className="wrap flex items-center justify-between py-6">
         <Link href={isAdmin ? "/admin" : "/dashboard"} className="font-label text-[22px] font-bold uppercase tracking-wide text-cream">
           Strhni<span className="text-gold">Dav</span>
         </Link>
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-7">
           {!isAdmin && !hasFullAccess && (
             <Link href="/dashboard/unlock" className="btn btn-sm">
               Odomkni celý kurz
             </Link>
           )}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3.5">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

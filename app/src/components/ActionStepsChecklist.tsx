@@ -47,7 +47,7 @@ export function ActionStepsChecklist({
   if (steps.length === 0) return null;
 
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="flex flex-col gap-3.5">
       {steps.map((step) => {
         const isDone = completed.has(step.id);
         return (
@@ -56,10 +56,10 @@ export function ActionStepsChecklist({
               type="button"
               onClick={() => toggle(step.id)}
               disabled={pending === step.id}
-              className="flex w-full items-start gap-3 text-left text-sm text-cream disabled:opacity-60"
+              className="flex w-full items-start gap-4 text-left text-sm text-cream disabled:opacity-60"
             >
               <span
-                className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-sm border ${
+                className={`mt-1.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-sm border ${
                   isDone ? "border-gold bg-gold text-bg" : "border-gold"
                 }`}
               >

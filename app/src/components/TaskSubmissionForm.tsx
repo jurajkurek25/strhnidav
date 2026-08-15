@@ -56,10 +56,10 @@ export function TaskSubmissionForm({
 
   if (isApproved) {
     return (
-      <div className="card p-6">
+      <div className="card p-8">
         <p className="text-sm text-good">Úloha splnená ✓</p>
         {submission?.ai_feedback && (
-          <p className="mt-2 text-sm text-muted">{submission.ai_feedback}</p>
+          <p className="mt-3 text-sm text-muted">{submission.ai_feedback}</p>
         )}
       </div>
     );
@@ -67,25 +67,25 @@ export function TaskSubmissionForm({
 
   if (taskType === "self_check") {
     return (
-      <form onSubmit={submit} className="card p-6">
-        {taskPrompt && <p className="mb-4 text-sm leading-relaxed text-muted">{taskPrompt}</p>}
+      <form onSubmit={submit} className="card p-8">
+        {taskPrompt && <p className="mb-6 text-sm leading-relaxed text-muted">{taskPrompt}</p>}
         <button type="submit" className="btn btn-sm" disabled={loading}>
           {loading ? "Ukladám…" : "Označujem, že som úlohu splnil"}
         </button>
-        {error && <p className="mt-2 text-xs text-[#d98d8d]">{error}</p>}
+        {error && <p className="mt-3 text-xs text-[#d98d8d]">{error}</p>}
       </form>
     );
   }
 
   return (
-    <form onSubmit={submit} className="card flex flex-col gap-4 p-6">
+    <form onSubmit={submit} className="card flex flex-col gap-6 p-8">
       {taskPrompt && <p className="text-sm leading-relaxed text-muted">{taskPrompt}</p>}
 
       {submission?.status === "rejected" && (
-        <div className="rounded-sm border border-wine/50 bg-wine/10 p-3 text-sm text-[#d98d8d]">
+        <div className="rounded-sm border border-wine/50 bg-wine/10 p-4 text-sm text-[#d98d8d]">
           <p className="font-semibold">AI vyhodnotila úlohu ako nesplnenú:</p>
-          <p className="mt-1">{submission.ai_feedback}</p>
-          <p className="mt-1 text-muted">Skús to prosím znova nižšie.</p>
+          <p className="mt-2">{submission.ai_feedback}</p>
+          <p className="mt-2 text-muted">Skús to prosím znova nižšie.</p>
         </div>
       )}
       {submission?.status === "pending" && (
@@ -108,7 +108,7 @@ export function TaskSubmissionForm({
           accept={taskType === "image" ? "image/*" : "application/pdf"}
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           required
-          className="text-sm text-muted file:mr-3 file:rounded-sm file:border-0 file:bg-gold file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-bg"
+          className="text-sm text-muted file:mr-4 file:rounded-sm file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-bg"
         />
       )}
 

@@ -21,8 +21,8 @@ export default async function NewLessonPage() {
   return (
     <>
       <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
-      <main className="wrap py-12 max-w-3xl">
-        <div className="eyebrow mb-4">Administrácia</div>
+      <main className="wrap py-16 max-w-3xl">
+        <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Nová lekcia</h1>
         <AdminNav active="/admin/lessons" />
 

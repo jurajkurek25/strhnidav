@@ -34,7 +34,7 @@ function Row({ item, onDelete }: { item: FileItem; onDelete: (id: string) => voi
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
-      className="flex items-center gap-2 text-sm"
+      className="flex items-center gap-3 text-sm"
     >
       <DragHandle attributes={attributes} listeners={listeners} />
       <span className="flex-1 text-cream">{item.title}</span>
@@ -87,7 +87,7 @@ export function SortableFileList({
   return (
     <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-3">
           {items.map((item) => (
             <Row key={item.id} item={item} onDelete={handleDelete} />
           ))}

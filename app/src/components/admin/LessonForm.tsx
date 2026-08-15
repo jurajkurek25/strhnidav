@@ -31,11 +31,11 @@ export function LessonForm({
   nextDayNumber: number;
 }) {
   return (
-    <form action={saveLesson} className="flex flex-col gap-8">
+    <form action={saveLesson} className="flex flex-col gap-10">
       {lesson && <input type="hidden" name="lesson_id" value={lesson.id} />}
 
-      <div className="card grid gap-4 p-6 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm text-muted">
+      <div className="card grid gap-6 p-8 sm:grid-cols-2">
+        <label className="flex flex-col gap-2.5 text-sm text-muted">
           Deň
           <input
             type="number"
@@ -46,7 +46,7 @@ export function LessonForm({
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm text-muted">
+        <label className="flex flex-col gap-2.5 text-sm text-muted">
           Sekcia
           <select name="section_id" defaultValue={lesson?.section_id ?? ""}>
             <option value="">Bez sekcie</option>
@@ -58,17 +58,17 @@ export function LessonForm({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm text-muted sm:col-span-2">
+        <label className="flex flex-col gap-2.5 text-sm text-muted sm:col-span-2">
           Názov lekcie
           <input type="text" name="title" defaultValue={lesson?.title ?? ""} required />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm text-muted sm:col-span-2">
+        <label className="flex flex-col gap-2.5 text-sm text-muted sm:col-span-2">
           Popis (zobrazí sa nad videom)
           <textarea name="description" rows={2} defaultValue={lesson?.description ?? ""} />
         </label>
 
-        <label className="flex items-center gap-2 text-sm text-cream">
+        <label className="flex items-center gap-3 text-sm text-cream">
           <input
             type="checkbox"
             name="is_free"
@@ -79,7 +79,7 @@ export function LessonForm({
         </label>
       </div>
 
-      <div className="card flex flex-col gap-4 p-6">
+      <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Video</h2>
         {lesson?.hls_ready ? (
           <p className="text-xs text-muted">
@@ -97,10 +97,10 @@ export function LessonForm({
         </p>
       </div>
 
-      <div className="card flex flex-col gap-4 p-6">
+      <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Náhľadový obrázok (thumbnail)</h2>
         {lesson?.thumbnail_ready ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={publicThumbnailUrl(lesson.id)}
@@ -117,9 +117,9 @@ export function LessonForm({
         <input type="file" name="thumbnail" accept="image/*" />
       </div>
 
-      <div className="card flex flex-col gap-4 p-6">
+      <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Úloha dňa</h2>
-        <label className="flex flex-col gap-1.5 text-sm text-muted">
+        <label className="flex flex-col gap-2.5 text-sm text-muted">
           Typ úlohy
           <select name="task_type" defaultValue={lesson?.task_type ?? "text"}>
             <option value="text">Text — AI vyhodnotí napísanú odpoveď</option>
@@ -128,18 +128,18 @@ export function LessonForm({
             <option value="self_check">Bez AI — člen si len odškrtne splnenie</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1.5 text-sm text-muted">
+        <label className="flex flex-col gap-2.5 text-sm text-muted">
           Zadanie úlohy (inštrukcie pre člena aj pre AI)
           <textarea name="task_prompt" rows={3} defaultValue={lesson?.task_prompt ?? ""} />
         </label>
       </div>
 
-      <div className="card flex flex-col gap-4 p-6">
+      <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Akčné kroky (checklist)</h2>
         <ActionStepsEditor initialSteps={actionSteps} />
       </div>
 
-      <div className="card flex flex-col gap-4 p-6">
+      <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Dokumenty na stiahnutie</h2>
         {lesson && documents.length > 0 && (
           <SortableFileList
@@ -152,7 +152,7 @@ export function LessonForm({
         <input type="file" name="new_documents" multiple />
       </div>
 
-      <div className="card flex flex-col gap-4 p-6">
+      <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Audio na stiahnutie</h2>
         {lesson && audio.length > 0 && (
           <SortableFileList

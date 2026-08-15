@@ -40,12 +40,12 @@ export default async function DashboardPage() {
         isAdmin={profile.is_admin}
         hasFullAccess={profile.has_full_access}
       />
-      <main className="wrap py-14">
-        <div className="eyebrow mb-4">Členská sekcia</div>
+      <main className="wrap py-20">
+        <div className="eyebrow mb-6">Členská sekcia</div>
         <h1 className="font-display text-[clamp(30px,4vw,44px)] font-semibold leading-tight">
           Vitaj späť{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}.
         </h1>
-        <p className="mt-4 text-[15px] leading-relaxed text-muted">
+        <p className="mt-6 text-[15px] leading-relaxed text-muted">
           Splnené <b className="text-gold-bright">{completedCount}</b> / {states.length} lekcií.
           {!profile.has_full_access && (
             <>
@@ -60,15 +60,15 @@ export default async function DashboardPage() {
         </p>
 
         {states.length === 0 && (
-          <p className="mt-10 text-muted">
+          <p className="mt-12 text-muted">
             Kurz sa ešte pripravuje — lekcie tu pribudnú čoskoro.
           </p>
         )}
 
         {orderedGroups.map((group) => (
-          <section key={group.title} className="mt-16">
-            <h2 className="font-display text-[22px] font-medium mb-7">{group.title}</h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <section key={group.title} className="mt-24">
+            <h2 className="font-display text-[22px] font-medium mb-9">{group.title}</h2>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
               {group.entries.map((entry) => (
                 <LessonGridCard key={entry.lesson.id} entry={entry} />
               ))}

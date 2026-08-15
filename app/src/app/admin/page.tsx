@@ -27,21 +27,21 @@ export default async function AdminHome() {
   return (
     <>
       <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
-      <main className="wrap py-12">
-        <div className="eyebrow mb-4">Administrácia</div>
+      <main className="wrap py-16">
+        <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Prehľad kurzu</h1>
         <AdminNav active="/admin" />
 
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-7 sm:grid-cols-3">
           {stats.map((s) => (
-            <div key={s.label} className="card p-6">
+            <div key={s.label} className="card p-8">
               <div className="font-display text-4xl font-semibold text-gold-bright">{s.value}</div>
-              <div className="mt-2.5 text-sm text-muted">{s.label}</div>
+              <div className="mt-3.5 text-sm text-muted">{s.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="mt-12 flex gap-3">
+        <div className="mt-16 flex gap-4">
           <Link href="/admin/lessons/new" className="btn">
             + Nová lekcia
           </Link>

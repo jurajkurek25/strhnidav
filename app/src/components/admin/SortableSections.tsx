@@ -37,13 +37,13 @@ function Row({ section }: { section: SectionItem }) {
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
-      className="card flex items-center gap-3 p-4"
+      className="card flex items-center gap-4 p-6"
     >
       <DragHandle attributes={attributes} listeners={listeners} />
       <div className="flex-1">
         <p className="font-medium text-cream">{section.title}</p>
-        {section.description && <p className="mt-1 text-sm text-muted">{section.description}</p>}
-        <p className="mt-1 text-xs text-muted">{section.lessonCount} lekcií</p>
+        {section.description && <p className="mt-2 text-sm text-muted">{section.description}</p>}
+        <p className="mt-2 text-xs text-muted">{section.lessonCount} lekcií</p>
       </div>
       <form action={deleteSection.bind(null, section.id)}>
         <button type="submit" className="btn btn-danger btn-sm">
@@ -78,7 +78,7 @@ export function SortableSections({ initialSections }: { initialSections: Section
   return (
     <DndContext id="sections" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-        <ul className="flex flex-col gap-2.5">
+        <ul className="flex flex-col gap-3.5">
           {sections.map((s) => (
             <Row key={s.id} section={s} />
           ))}

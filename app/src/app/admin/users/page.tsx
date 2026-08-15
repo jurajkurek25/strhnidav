@@ -21,27 +21,27 @@ export default async function AdminUsersPage() {
   return (
     <>
       <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
-      <main className="wrap py-12">
-        <div className="eyebrow mb-4">Administrácia</div>
+      <main className="wrap py-16">
+        <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Členovia</h1>
         <AdminNav active="/admin/users" />
 
-        <section className="mb-12">
-          <h2 className="font-display text-lg font-medium mb-2.5">Bezplatný prístup podľa emailu</h2>
-          <p className="mb-6 text-sm text-muted max-w-[64ch] leading-relaxed">
+        <section className="mb-16">
+          <h2 className="font-display text-lg font-medium mb-3.5">Bezplatný prístup podľa emailu</h2>
+          <p className="mb-8 text-sm text-muted max-w-[64ch] leading-relaxed">
             Pridaj Gmail účet a dostane celý kurz zadarmo — hneď, ak sa už niekedy prihlásil,
             alebo automaticky pri prvom prihlásení cez Google.
           </p>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <ul className="flex flex-col gap-2.5">
+          <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+            <ul className="flex flex-col gap-3.5">
               {(grants ?? []).map((g) => (
-                <li key={g.id} className="card flex items-center justify-between gap-4 p-4">
+                <li key={g.id} className="card flex items-center justify-between gap-6 p-6">
                   <div className="min-w-0">
                     <p className="truncate text-cream">{g.email}</p>
-                    {g.note && <p className="mt-1 text-xs text-muted">{g.note}</p>}
+                    {g.note && <p className="mt-2 text-xs text-muted">{g.note}</p>}
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-4">
                     {registeredEmails.has(g.email.toLowerCase()) ? (
                       <span className="tag tag-good">registrovaný</span>
                     ) : (
@@ -60,7 +60,7 @@ export default async function AdminUsersPage() {
               )}
             </ul>
 
-            <form action={addFreeAccessGrant} className="card flex flex-col gap-3 p-5 h-fit">
+            <form action={addFreeAccessGrant} className="card flex flex-col gap-4 p-7 h-fit">
               <input type="email" name="email" placeholder="meno@gmail.com" required />
               <input type="text" name="note" placeholder="Poznámka (nepovinné)" />
               <button type="submit" className="btn btn-sm self-start">
@@ -74,22 +74,22 @@ export default async function AdminUsersPage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-card-line text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-4 py-3">Meno</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Registrácia</th>
-                <th className="px-4 py-3">Prístup</th>
-                <th className="px-4 py-3" />
+                <th className="px-6 py-4">Meno</th>
+                <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Registrácia</th>
+                <th className="px-6 py-4">Prístup</th>
+                <th className="px-6 py-4" />
               </tr>
             </thead>
             <tbody>
               {(users ?? []).map((u) => (
                 <tr key={u.id} className="border-b border-card-line last:border-0">
-                  <td className="px-4 py-3 text-cream">{u.full_name ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted">{u.email}</td>
-                  <td className="px-4 py-3 text-muted">
+                  <td className="px-6 py-4 text-cream">{u.full_name ?? "—"}</td>
+                  <td className="px-6 py-4 text-muted">{u.email}</td>
+                  <td className="px-6 py-4 text-muted">
                     {new Date(u.created_at).toLocaleDateString("sk-SK")}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4">
                     {u.is_admin ? (
                       <span className="tag tag-good">admin</span>
                     ) : u.has_full_access ? (
@@ -98,7 +98,7 @@ export default async function AdminUsersPage() {
                       <span className="tag tag-muted">7 lekcií zadarmo</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-6 py-4 text-right">
                     {!u.is_admin && (
                       <form action={setUserAccess.bind(null, u.id, !u.has_full_access)}>
                         <button type="submit" className="btn btn-ghost btn-sm">
@@ -111,7 +111,7 @@ export default async function AdminUsersPage() {
               ))}
               {(users ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={5} className="px-6 py-10 text-center text-muted">
                     Zatiaľ sa nikto neprihlásil.
                   </td>
                 </tr>
