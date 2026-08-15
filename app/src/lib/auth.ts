@@ -10,11 +10,19 @@ export async function requireProfile(): Promise<Profile> {
   const supabase = await createClient();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) {
+    // TEMPORARY diagnostic — remove once the refresh→login-redirect bug is
+    // confirmed fixed. Check with `pm2 logs strhnidav`.
+    console.log("[requireProfile] redirecting: no user", {
+      userError: userError ? { message: userError.message, status: userError.status } : null,
+    });
+    redirect("/login");
+  }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
@@ -22,7 +30,16 @@ export async function requireProfile(): Promise<Profile> {
 
   // The DB trigger creates this row on first sign-in; this is only a
   // defensive fallback in case it hasn't landed yet.
-  if (!profile) redirect("/login");
+  if (!profile) {
+    console.log("[requireProfile] redirecting: no profile row", {
+      userId: user.id,
+      email: user.email,
+      profileError: profileError
+        ? { message: profileError.message, code: profileError.code, details: profileError.details }
+        : null,
+    });
+    redirect("/login");
+  }
 
   return profile;
 }
