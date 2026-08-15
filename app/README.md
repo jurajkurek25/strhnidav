@@ -177,7 +177,7 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
    cd /home/strhnidav-kurz/repo
    git pull origin claude/membership-course-app-4orr1v
    echo "Deploying commit: $(git log -1 --oneline)"
-   rsync -a --exclude='.env' --exclude='.env.local' \
+   rsync -a --delete --exclude='.env' --exclude='.env.local' \
      --exclude='node_modules' --exclude='.next' \
      app/ /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk/
    cd /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk
@@ -189,7 +189,11 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
 
    `rm -rf .next` pred buildom odstraňuje akékoľvek riziko, že Turbopack
    znova použije zastaranú build cache namiesto prekompilovania zmenených
-   súborov (Tailwind triedy sa generujú práve pri builde).
+   súborov (Tailwind triedy sa generujú práve pri builde). `--delete` na
+   rsync je rovnako dôležité — bez neho súbory, ktoré v novej verzii kódu
+   už neexistujú (napr. celý starý priečinok po väčšom refaktore), v
+   `htdocs/...` jednoducho ostanú ležať namiesto zmazania, aj keď sa na ne
+   už nikde neodkazuje.
 
    ```bash
    chmod +x /home/strhnidav-kurz/update-strhnidav.sh
