@@ -146,14 +146,21 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
    set -e
    cd /home/strhnidav-kurz/repo
    git pull origin claude/membership-course-app-4orr1v
+   echo "Deploying commit: $(git log -1 --oneline)"
    rsync -a --exclude='.env' --exclude='.env.local' \
      --exclude='node_modules' --exclude='.next' \
      app/ /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk/
    cd /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk
    npm install
+   rm -rf .next
    npm run build
    pm2 restart strhnidav
    ```
+
+   `rm -rf .next` pred buildom nie je nutný pri každej zmene, ale odstraňuje
+   akékoľvek riziko, že Turbopack znova použije zastaranú build cache
+   namiesto prekompilovania zmenených súborov (Tailwind triedy sa generujú
+   práve pri builde).
 
    ```bash
    chmod +x /home/strhnidav-kurz/update-strhnidav.sh
