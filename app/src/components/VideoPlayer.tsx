@@ -403,7 +403,7 @@ export function VideoPlayer({
             {playing ? <PauseGlyph size={19} /> : <PlayGlyph size={19} />}
           </button>
 
-          <span className="font-label text-[12px] tabular-nums tracking-wide text-cream/80">
+          <span className="whitespace-nowrap font-label text-[11px] tabular-nums tracking-wide text-cream/80 sm:text-[12px]">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
 
@@ -471,7 +471,7 @@ export function VideoPlayer({
                 setVolume(v);
                 setMuted(v === 0);
               }}
-              className="range-gold w-16"
+              className="range-gold hidden w-16 sm:block"
               aria-label="Hlasitosť"
             />
           </div>

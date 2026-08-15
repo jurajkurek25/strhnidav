@@ -14,17 +14,21 @@ export function Header({
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-card-line bg-bg/85 backdrop-blur-md">
-      <nav className="wrap flex items-center justify-between py-6">
-        <Link href={isAdmin ? "/admin" : "/dashboard"} className="font-label text-[22px] font-bold uppercase tracking-wide text-cream">
+      <nav className="wrap flex items-center justify-between gap-3 py-4 sm:py-6">
+        <Link
+          href={isAdmin ? "/admin" : "/dashboard"}
+          className="shrink-0 font-label text-[17px] font-bold uppercase tracking-wide text-cream sm:text-[22px]"
+        >
           Strhni<span className="text-gold">Dav</span>
         </Link>
-        <div className="flex items-center gap-7">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-7">
           {!isAdmin && !hasFullAccess && (
-            <Link href="/dashboard/unlock" className="btn btn-sm">
-              Odomkni celý kurz
+            <Link href="/dashboard/unlock" className="btn btn-sm !px-3 whitespace-nowrap sm:!px-5">
+              <span className="hidden sm:inline">Odomkni celý kurz</span>
+              <span className="sm:hidden">Odomknúť</span>
             </Link>
           )}
-          <div className="flex items-center gap-3.5">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3.5">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -39,9 +43,29 @@ export function Header({
             )}
             <span className="hidden text-sm text-muted sm:inline">{name}</span>
           </div>
-          <form action={signOutAction}>
-            <button type="submit" className="btn btn-ghost btn-sm">
-              Odhlásiť
+          <form action={signOutAction} className="shrink-0">
+            <button
+              type="submit"
+              aria-label="Odhlásiť"
+              className="btn btn-ghost btn-sm !px-2.5 whitespace-nowrap sm:!px-5"
+            >
+              <span className="hidden sm:inline">Odhlásiť</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="sm:hidden"
+                aria-hidden
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+              </svg>
             </button>
           </form>
         </div>

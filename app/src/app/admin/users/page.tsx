@@ -68,8 +68,8 @@ export default async function AdminUsersPage() {
           </div>
         </section>
 
-        <div className="card overflow-hidden">
-          <table className="w-full border-collapse text-sm">
+        <div className="card overflow-x-auto overflow-y-hidden">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-card-line text-left text-xs uppercase tracking-wide text-muted">
                 <th className="px-6 py-4">Meno</th>
