@@ -1,5 +1,6 @@
 import { saveLesson, deleteDocument, deleteAudio } from "@/app/admin/actions";
 import { ActionStepsEditor } from "@/components/admin/ActionStepsEditor";
+import { publicThumbnailUrl } from "@/lib/hls";
 import type { Database } from "@/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
@@ -84,8 +85,29 @@ export function LessonForm({
         <input type="file" name="video" accept="video/*" />
         <p className="text-xs text-muted">
           Po odoslaní formulára appka video rozseká a zašifruje (AES-128 HLS) — pri dlhších
-          videách to môže chvíľu trvať, stránka počká na dokončenie.
+          videách to môže chvíľu trvať, stránka počká na dokončenie. Zároveň z videa automaticky
+          vytiahne náhľadovú snímku, ak nižšie nenahráš vlastnú.
         </p>
+      </div>
+
+      <div className="card flex flex-col gap-4 p-6">
+        <h2 className="font-display text-lg font-medium">Náhľadový obrázok (thumbnail)</h2>
+        {lesson?.thumbnail_ready ? (
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={publicThumbnailUrl(lesson.id)}
+              alt=""
+              className="aspect-video w-40 rounded-sm border border-card-line object-cover"
+            />
+            <p className="text-xs text-muted">Náhľad je nastavený. Nahraj nový pre nahradenie.</p>
+          </div>
+        ) : (
+          <p className="text-xs text-muted">
+            Zatiaľ žiadny vlastný náhľad — kým ho nenahráš, použije sa snímka z videa.
+          </p>
+        )}
+        <input type="file" name="thumbnail" accept="image/*" />
       </div>
 
       <div className="card flex flex-col gap-4 p-6">

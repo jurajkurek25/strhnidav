@@ -23,7 +23,7 @@ export function AdminLessonCard({
     sectionTitle: string | null;
   };
 }) {
-  const hasThumbnail = lesson.hls_ready && lesson.thumbnail_ready;
+  const hasThumbnail = lesson.thumbnail_ready;
 
   return (
     <div className="card flex flex-col overflow-hidden">

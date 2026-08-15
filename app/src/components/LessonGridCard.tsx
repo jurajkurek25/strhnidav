@@ -26,7 +26,7 @@ function PlayIcon() {
 export function LessonGridCard({ entry }: { entry: LessonWithState }) {
   const { lesson, state, unlocksAt } = entry;
   const accessible = state === "unlocked" || state === "completed";
-  const hasThumbnail = lesson.hls_ready && lesson.thumbnail_ready;
+  const hasThumbnail = lesson.thumbnail_ready;
 
   const badge =
     state === "completed" ? (

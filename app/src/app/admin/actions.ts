@@ -83,13 +83,31 @@ export async function saveLesson(formData: FormData) {
   }
 
   // Optional new video file replaces the existing one — packaged into
-  // AES-128 encrypted HLS (see src/lib/hls.ts) rather than stored raw.
+  // AES-128 encrypted HLS (see src/lib/hls.ts) rather than stored raw. This
+  // also auto-extracts a thumbnail frame, which a manual upload below (if
+  // provided in the same submission) then overrides.
   const video = formData.get("video");
   if (video instanceof File && video.size > 0) {
     const ext = video.name.split(".").pop() || "mp4";
     const buffer = Buffer.from(await video.arrayBuffer());
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
     await packageLessonVideoAsEncryptedHls(id, buffer, ext, siteUrl);
+  }
+
+  // Optional manual thumbnail — wins over the auto-extracted video frame,
+  // whether uploaded now or later. Stored at a fixed path/content-type-only
+  // distinction (see lib/hls.ts's publicThumbnailUrl), so any image format works.
+  const thumbnail = formData.get("thumbnail");
+  if (thumbnail instanceof File && thumbnail.size > 0) {
+    const result = await uploadToBucket(
+      "lesson-thumbnails",
+      `${id}/thumbnail.jpg`,
+      thumbnail,
+      thumbnail.type || "image/jpeg"
+    );
+    if ("path" in result) {
+      await admin.from("lessons").update({ thumbnail_ready: true }).eq("id", id);
+    }
   }
 
   // Action steps: parallel arrays of (possibly empty) ids and bodies from
