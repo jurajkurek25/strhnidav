@@ -10,12 +10,16 @@ import { handlers } from "@/auth";
 // which then rejects it as redirect_uri_mismatch. Forcing the request's own
 // URL to the canonical public origin before handing off to Auth.js makes
 // every internal code path see the same value the initial redirect used.
-const AUTH_ORIGIN = new URL(process.env.AUTH_URL!);
-
+//
+// AUTH_URL is read lazily (inside the function, not at module top level) —
+// Next.js evaluates this module during its build-time "collect page data"
+// step too, where env vars aren't necessarily populated yet, and a
+// top-level `new URL(process.env.AUTH_URL)` would throw and fail the build.
 function withCanonicalOrigin(request: NextRequest): NextRequest {
+  const authOrigin = new URL(process.env.AUTH_URL!);
   const url = new URL(request.url);
-  url.protocol = AUTH_ORIGIN.protocol;
-  url.host = AUTH_ORIGIN.host;
+  url.protocol = authOrigin.protocol;
+  url.host = authOrigin.host;
 
   const init: Record<string, unknown> = {
     method: request.method,
