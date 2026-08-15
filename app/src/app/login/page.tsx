@@ -14,7 +14,12 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        // Deliberately NOT window.location.origin — that reflects whatever
+        // URL the browser happens to be on (e.g. a raw IP:port or an SSH
+        // tunnel's localhost during testing), which would send Google's
+        // OAuth callback to the wrong place. NEXT_PUBLIC_SITE_URL is the
+        // one trusted production URL, same as the rest of the app uses.
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
       },
     });
     if (error) {
