@@ -18,10 +18,6 @@ export const authConfig = {
   // (the same class of bug this app already hit twice with Supabase's
   // window.location.origin / request.url).
   trustHost: true,
-  // TEMPORARY — remove once the redirect_uri_mismatch-during-token-exchange
-  // bug is diagnosed. Prints exactly what host/URL Auth.js resolves for
-  // each request, visible via `pm2 logs strhnidav`.
-  debug: true,
   providers: [],
   callbacks: {
     // Only reads token.id here — it's *set* in the jwt callback in
