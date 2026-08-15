@@ -87,6 +87,12 @@ ju rovnako — v poradí podľa čísla.
    ```bash
    openssl rand -base64 33
    ```
+5. Nastav `AUTH_URL` na presne tú istú hodnotu ako `NEXT_PUBLIC_SITE_URL`
+   (napr. `https://kurz.strhnidav.sk`). **Za reverzným proxy (CloudPanel/
+   Nginx) je to povinné** — bez toho si NextAuth vie odvodiť redirect URI
+   z toho, ako appka vidí prichádzajúcu požiadavku (napr.
+   `http://localhost:7777`), čo Google odmietne s `redirect_uri_mismatch`,
+   keďže v Google Console je zaregistrovaná len verejná URL.
 
 Prihlasovanie ide teraz priamo appka → Google, bez medzikroku cez tretiu
 stranu.
