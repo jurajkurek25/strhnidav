@@ -327,6 +327,31 @@ export interface Database {
           }
         ];
       };
+      free_access_grants: {
+        Row: {
+          id: string;
+          email: string;
+          note: string | null;
+          granted_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          note?: string | null;
+          granted_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["free_access_grants"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "free_access_grants_granted_by_fkey";
+            columns: ["granted_by"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       lesson_video_keys: {
         Row: {
           lesson_id: string;

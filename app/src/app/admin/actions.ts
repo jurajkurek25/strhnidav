@@ -204,3 +204,38 @@ export async function setUserAccess(userId: string, hasFullAccess: boolean) {
     .eq("id", userId);
   revalidatePath("/admin/users");
 }
+
+// ---------------------------------------------------------------------------
+// free access by email — whitelists a Gmail address for free full-course
+// access. Applied immediately if that person already has a profile, and
+// automatically on first sign-in otherwise (see handle_new_user() in
+// supabase/migrations/0004_free_access_grants.sql).
+// ---------------------------------------------------------------------------
+export async function addFreeAccessGrant(formData: FormData) {
+  const admin_ = await requireAdmin();
+  const admin = createAdminClient();
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const note = String(formData.get("note") ?? "").trim() || null;
+  if (!email) return;
+
+  const { error } = await admin
+    .from("free_access_grants")
+    .upsert({ email, note, granted_by: admin_.id }, { onConflict: "email" });
+  if (error) throw new Error(error.message);
+
+  // Apply immediately if that person already signed up at some point.
+  await admin
+    .from("profiles")
+    .update({ has_full_access: true, purchased_at: new Date().toISOString() })
+    .eq("email", email);
+
+  revalidatePath("/admin/users");
+}
+
+export async function removeFreeAccessGrant(id: string) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await admin.from("free_access_grants").delete().eq("id", id);
+  revalidatePath("/admin/users");
+}

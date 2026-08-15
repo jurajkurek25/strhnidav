@@ -3,7 +3,8 @@
 Next.js aplikácia pre členskú sekciu kurzu Strhni Dav. Google prihlásenie,
 denne odomykané lekcie (video + AI-vyhodnocovaná úloha), platba 199 € cez
 Stripe na odomknutie celého kurzu po prvých 7 bezplatných lekciách, a
-plnohodnotný admin panel pre `jurajkurek2006@gmail.com`.
+plnohodnotný admin panel pre `jurajkurek2006@gmail.com` — vrátane možnosti
+udeliť konkrétnemu Gmail účtu celý kurz zadarmo (`/admin/users`).
 
 ## Ako funguje odomykanie
 
@@ -32,9 +33,9 @@ plnohodnotný admin panel pre `jurajkurek2006@gmail.com`.
 ## 1. Supabase projekt
 
 1. Vytvor projekt na [supabase.com](https://supabase.com).
-2. V **SQL Editor** spusti postupne obsah `supabase/migrations/0001_init.sql`,
-   `0002_seed_sections.sql` a `0003_video_encryption.sql`. Vytvorí to všetky
-   tabuľky, RLS politiky a storage buckety (`lesson-documents`,
+2. V **SQL Editor** spusti postupne obsah všetkých súborov v
+   `supabase/migrations/` (`0001` → `0004`, v poradí podľa čísla). Vytvorí
+   to všetky tabuľky, RLS politiky a storage buckety (`lesson-documents`,
    `lesson-audio`, `task-uploads`, `lock-art` sú privátne;
    `lesson-videos-hls` je verejný — obsahuje len zašifrované segmenty videa,
    viď sekcia o ochrane videa nižšie).
