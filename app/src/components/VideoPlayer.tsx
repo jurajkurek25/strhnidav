@@ -5,6 +5,63 @@ import type Hls from "hls.js";
 
 const WATCHED_THRESHOLD = 0.95; // count as "watched" once 95% has actually played
 const SEEK_FORWARD_TOLERANCE = 2; // seconds of slack before we snap a forward-seek back
+const CONTROLS_HIDE_DELAY = 2800; // ms of inactivity before controls fade out while playing
+
+function formatTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+function PlayGlyph({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className="fill-current">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+function PauseGlyph({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className="fill-current">
+      <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+    </svg>
+  );
+}
+function VolumeGlyph({ level }: { level: "off" | "low" | "high" }) {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" className="fill-current">
+      <path d="M4 9v6h4l5 5V4L8 9H4z" />
+      {level !== "off" && (
+        <path
+          d="M16.5 12a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12z"
+          opacity={level === "high" ? 1 : 0.5}
+        />
+      )}
+      {level === "high" && (
+        <path d="M19 12a7 7 0 0 0-4-6.32v1.6A5.5 5.5 0 0 1 17.5 12 5.5 5.5 0 0 1 15 17.72v1.6A7 7 0 0 0 19 12z" />
+      )}
+      {level === "off" && <path d="M19.5 7.5 18 6l-3 3-3-3-1.5 1.5 3 3-3 3L12 15l3-3 3 3 1.5-1.5-3-3z" />}
+    </svg>
+  );
+}
+function FullscreenEnterGlyph() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3" />
+    </svg>
+  );
+}
+function FullscreenExitGlyph() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M9 3v3a2 2 0 0 1-2 2H4M15 3v3a2 2 0 0 0 2 2h3M9 21v-3a2 2 0 0 0-2-2H4M15 21v-3a2 2 0 0 1 2-2h3" />
+    </svg>
+  );
+}
 
 export function VideoPlayer({
   src,
@@ -20,11 +77,24 @@ export function VideoPlayer({
   onWatched: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const furthestRef = useRef(0); // seconds, the deepest point actually played
   const reportedRef = useRef(alreadyWatched);
   const lastSavedPercentRef = useRef(Math.floor(initialPercent));
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [percent, setPercent] = useState(Math.floor(initialPercent));
   const [watched, setWatched] = useState(alreadyWatched);
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [scrubbing, setScrubbing] = useState(false);
 
   // src points at an encrypted HLS playlist (.m3u8) — segments are AES-128
   // encrypted and served publicly, the decryption key is fetched by the
@@ -58,6 +128,38 @@ export function VideoPlayer({
     };
   }, [src]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.volume = volume;
+    video.muted = muted;
+  }, [volume, muted]);
+
+  useEffect(() => {
+    function onFsChange() {
+      setFullscreen(document.fullscreenElement === containerRef.current);
+    }
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  const wakeControls = useCallback(() => {
+    setShowControls(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowControls(false), CONTROLS_HIDE_DELAY);
+  }, []);
+
+  useEffect(() => {
+    if (playing) wakeControls();
+    else {
+      setShowControls(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    }
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [playing, wakeControls]);
+
   const saveProgress = useCallback(
     (pct: number, completed: boolean) => {
       fetch("/api/progress/video", {
@@ -72,6 +174,8 @@ export function VideoPlayer({
   function handleTimeUpdate() {
     const video = videoRef.current;
     if (!video || !video.duration) return;
+
+    if (!scrubbing) setCurrentTime(video.currentTime);
 
     if (video.currentTime > furthestRef.current) {
       furthestRef.current = video.currentTime;
@@ -102,16 +206,104 @@ export function VideoPlayer({
     }
   }
 
+  function togglePlay() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) video.play();
+    else video.pause();
+  }
+
+  function seekToFraction(fraction: number) {
+    const video = videoRef.current;
+    if (!video || !video.duration) return;
+    const maxAllowedFraction = Math.min(
+      1,
+      (furthestRef.current + SEEK_FORWARD_TOLERANCE) / video.duration
+    );
+    const clamped = Math.max(0, Math.min(fraction, maxAllowedFraction));
+    video.currentTime = clamped * video.duration;
+    setCurrentTime(video.currentTime);
+  }
+
+  function fractionFromPointer(clientX: number): number {
+    const track = trackRef.current;
+    if (!track) return 0;
+    const rect = track.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  }
+
+  function handleTrackPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setScrubbing(true);
+    seekToFraction(fractionFromPointer(e.clientX));
+  }
+  function handleTrackPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!scrubbing) return;
+    setCurrentTime(fractionFromPointer(e.clientX) * (duration || 0));
+    seekToFraction(fractionFromPointer(e.clientX));
+  }
+  function handleTrackPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    setScrubbing(false);
+  }
+
+  function toggleFullscreen() {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    } else {
+      containerRef.current.requestFullscreen?.();
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      togglePlay();
+    } else if (e.key === "ArrowLeft") {
+      seekToFraction((currentTime - 5) / (duration || 1));
+    } else if (e.key === "ArrowRight") {
+      seekToFraction((currentTime + 5) / (duration || 1));
+    } else if (e.key === "f") {
+      toggleFullscreen();
+    } else if (e.key === "m") {
+      setMuted((m) => !m);
+    }
+  }
+
+  const playedFraction = duration > 0 ? currentTime / duration : 0;
+  const watchedFraction = duration > 0 ? Math.min(1, furthestRef.current / duration) : 0;
+  const volumeLevel: "off" | "low" | "high" = muted || volume === 0 ? "off" : volume < 0.5 ? "low" : "high";
+
   return (
-    <div className="relative">
+    <div
+      ref={containerRef}
+      role="group"
+      aria-label="Video prehrávač"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onMouseMove={wakeControls}
+      onMouseLeave={() => playing && setShowControls(false)}
+      onClick={togglePlay}
+      className="group relative aspect-video w-full select-none overflow-hidden rounded-sm bg-black outline-none"
+    >
       <video
         ref={videoRef}
-        controls
         controlsList="nodownload noremoteplayback"
         disablePictureInPicture
+        playsInline
         onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={handleTimeUpdate}
         onSeeking={handleSeeking}
+        onLoadedMetadata={() => {
+          setDuration(videoRef.current?.duration ?? 0);
+          setLoading(false);
+        }}
+        onWaiting={() => setLoading(true)}
+        onPlaying={() => setLoading(false)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
         onEnded={() => {
           furthestRef.current = videoRef.current?.duration ?? furthestRef.current;
           setPercent(100);
@@ -122,17 +314,126 @@ export function VideoPlayer({
             onWatched();
           }
         }}
-        className="aspect-video w-full rounded-sm bg-bg-alt"
+        className="h-full w-full"
       />
-      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-card-line">
+
+      {loading && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-cream/25 border-t-gold-bright" />
+        </div>
+      )}
+
+      {!playing && !loading && (
+        <button
+          type="button"
+          aria-label="Prehrať"
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlay();
+          }}
+          className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gold text-bg shadow-[0_0_30px_rgba(201,161,48,0.45)] transition hover:bg-gold-bright"
+        >
+          <PlayGlyph size={26} />
+        </button>
+      )}
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-4 pb-3 pt-12 transition-opacity duration-200 ${
+          showControls || !playing ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
         <div
-          className="h-full bg-gold transition-[width]"
-          style={{ width: `${percent}%` }}
-        />
+          ref={trackRef}
+          onPointerDown={handleTrackPointerDown}
+          onPointerMove={handleTrackPointerMove}
+          onPointerUp={handleTrackPointerUp}
+          className="group/track relative flex h-4 cursor-pointer items-center"
+        >
+          <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/20">
+            <div
+              className="absolute inset-y-0 left-0 bg-white/25"
+              style={{ width: `${watchedFraction * 100}%` }}
+            />
+            <div
+              className="absolute inset-y-0 left-0 bg-gold-bright"
+              style={{ width: `${playedFraction * 100}%` }}
+            />
+          </div>
+          <div
+            className="absolute h-3 w-3 -translate-x-1/2 rounded-full bg-gold-bright opacity-0 shadow transition-opacity group-hover/track:opacity-100"
+            style={{ left: `${playedFraction * 100}%` }}
+          />
+        </div>
+
+        <div className="mt-1 flex items-center gap-3">
+          <button
+            type="button"
+            aria-label={playing ? "Pozastaviť" : "Prehrať"}
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePlay();
+            }}
+            className="text-cream transition hover:text-gold-bright"
+          >
+            {playing ? <PauseGlyph size={19} /> : <PlayGlyph size={19} />}
+          </button>
+
+          <span className="font-label text-[12px] tabular-nums tracking-wide text-cream/80">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={muted ? "Zapnúť zvuk" : "Stlmiť"}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMuted((m) => !m);
+              }}
+              className="text-cream transition hover:text-gold-bright"
+            >
+              <VolumeGlyph level={volumeLevel} />
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={muted ? 0 : volume}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setVolume(v);
+                setMuted(v === 0);
+              }}
+              className="range-gold w-16"
+              aria-label="Hlasitosť"
+            />
+          </div>
+
+          <button
+            type="button"
+            aria-label={fullscreen ? "Ukončiť celú obrazovku" : "Celá obrazovka"}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFullscreen();
+            }}
+            className="text-cream transition hover:text-gold-bright"
+          >
+            {fullscreen ? <FullscreenExitGlyph /> : <FullscreenEnterGlyph />}
+          </button>
+        </div>
       </div>
-      <p className="mt-2.5 text-xs text-muted">
-        {watched ? "Video dopozerané ✓" : `Odsledované ${percent}%`}
-      </p>
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="pointer-events-none absolute right-3 top-3 rounded-sm bg-black/50 px-2 py-1 font-label text-[11px] tracking-wide text-cream/70"
+      >
+        {watched ? "Dopozerané ✓" : `${percent}%`}
+      </div>
     </div>
   );
 }
