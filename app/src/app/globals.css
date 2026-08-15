@@ -262,6 +262,19 @@
   }
 }
 
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: var(--bg);
+  }
+  @page {
+    size: landscape;
+    margin: 12mm;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

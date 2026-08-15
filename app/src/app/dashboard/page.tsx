@@ -32,6 +32,7 @@ export default async function DashboardPage() {
 
   const orderedGroups = [...groups.values()].sort((a, b) => a.order - b.order);
   const completedCount = states.filter((s) => s.state === "completed").length;
+  const courseCompleted = profile.hasFullAccess && states.length > 0 && completedCount === states.length;
 
   return (
     <>
@@ -59,6 +60,20 @@ export default async function DashboardPage() {
             </>
           )}
         </p>
+
+        {courseCompleted && (
+          <div className="card mt-10 flex flex-wrap items-center justify-between gap-6 p-8">
+            <div>
+              <div className="eyebrow mb-3">Kurz dokončený</div>
+              <p className="font-display text-[19px] font-medium">
+                Absolvoval/-a si celý program — vyzdvihni si svoj certifikát.
+              </p>
+            </div>
+            <a href="/dashboard/certificate" className="btn shrink-0">
+              Zobraziť certifikát
+            </a>
+          </div>
+        )}
 
         {states.length === 0 && (
           <p className="mt-12 text-muted">

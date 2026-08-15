@@ -165,6 +165,18 @@ export const lessonVideoKeys = pgTable("lesson_video_keys", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// One row per person who has finished every lesson of the paid course.
+// Issued once (id is the public verification code embedded in the
+// certificate's QR code / kurz.strhnidav.sk/certifikat/[id]) and never
+// re-generated — fullName is a snapshot at issuance time so a later Google
+// profile-name change can't retroactively alter an already-issued document.
+export const certificates = pgTable("certificates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().unique().references(() => profiles.id, { onDelete: "cascade" }),
+  fullName: text("full_name").notNull(),
+  issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Whitelists a Gmail address for free full-course access — applied
 // immediately if that person already has a profile, and automatically on
 // first sign-in otherwise (see the signIn callback in src/auth.ts).
