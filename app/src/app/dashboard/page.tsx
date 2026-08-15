@@ -66,9 +66,9 @@ export default async function DashboardPage() {
         )}
 
         {orderedGroups.map((group) => (
-          <section key={group.title} className="mt-12">
-            <h2 className="font-display text-[22px] font-medium mb-5">{group.title}</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <section key={group.title} className="mt-14">
+            <h2 className="font-display text-[22px] font-medium mb-6">{group.title}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {group.entries.map((entry) => (
                 <LessonGridCard key={entry.lesson.id} entry={entry} />
               ))}

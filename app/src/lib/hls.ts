@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const execFileAsync = promisify(execFile);
 const HLS_BUCKET = "lesson-videos-hls";
+const THUMBNAIL_BUCKET = "lesson-thumbnails";
 const SEGMENT_SECONDS = 6;
 
 async function runFfmpeg(args: string[]) {
@@ -114,9 +115,16 @@ export async function packageLessonVideoAsEncryptedHls(
       { lesson_id: lessonId, key_id: keyId, aes_key_base64: key.toString("base64") },
       { onConflict: "lesson_id" }
     );
+
+    const thumbnailReady = await extractThumbnail(inputPath, workDir, lessonId, admin);
+
     await admin
       .from("lessons")
-      .update({ hls_ready: true, hls_segment_count: segmentFiles.length })
+      .update({
+        hls_ready: true,
+        hls_segment_count: segmentFiles.length,
+        thumbnail_ready: thumbnailReady,
+      })
       .eq("id", lessonId);
 
     return { segmentCount: segmentFiles.length };
@@ -125,7 +133,34 @@ export async function packageLessonVideoAsEncryptedHls(
   }
 }
 
+/** Grabs a single frame ~1s in as the grid/dashboard thumbnail. Best-effort —
+ * a lesson without a thumbnail just falls back to the decorative gradient
+ * card, so failures here shouldn't fail the whole upload. */
+async function extractThumbnail(
+  inputPath: string,
+  workDir: string,
+  lessonId: string,
+  admin: ReturnType<typeof createAdminClient>
+): Promise<boolean> {
+  const thumbPath = path.join(workDir, "thumbnail.jpg");
+  try {
+    await runFfmpeg(["-y", "-ss", "1", "-i", inputPath, "-frames:v", "1", "-q:v", "3", thumbPath]);
+    const contents = await readFile(thumbPath);
+    const { error } = await admin.storage
+      .from(THUMBNAIL_BUCKET)
+      .upload(`${lessonId}/thumbnail.jpg`, contents, { contentType: "image/jpeg", upsert: true });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 export function publicHlsPlaylistUrl(lessonId: string): string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   return `${base}/storage/v1/object/public/${HLS_BUCKET}/${lessonId}/playlist.m3u8`;
+}
+
+export function publicThumbnailUrl(lessonId: string): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  return `${base}/storage/v1/object/public/${THUMBNAIL_BUCKET}/${lessonId}/thumbnail.jpg`;
 }

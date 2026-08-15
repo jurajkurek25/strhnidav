@@ -3,14 +3,14 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
-import { deleteLesson } from "@/app/admin/actions";
+import { AdminLessonCard } from "@/components/admin/AdminLessonCard";
 
 export default async function AdminLessonsPage() {
   const profile = await requireAdmin();
   const supabase = await createClient();
   const { data: lessons } = await supabase
     .from("lessons")
-    .select("id, day_number, title, is_free, task_type, hls_ready, sections(title)")
+    .select("id, day_number, title, is_free, task_type, hls_ready, thumbnail_ready, sections(title)")
     .order("day_number", { ascending: true });
 
   return (
@@ -26,60 +26,30 @@ export default async function AdminLessonsPage() {
         </div>
         <AdminNav active="/admin/lessons" />
 
-        <div className="card overflow-hidden">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-card-line text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-4 py-3">Deň</th>
-                <th className="px-4 py-3">Názov</th>
-                <th className="px-4 py-3">Sekcia</th>
-                <th className="px-4 py-3">Úloha</th>
-                <th className="px-4 py-3">Video</th>
-                <th className="px-4 py-3">Prístup</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {(lessons ?? []).map((l) => {
-                const section = Array.isArray(l.sections) ? l.sections[0] : l.sections;
-                return (
-                  <tr key={l.id} className="border-b border-card-line last:border-0">
-                    <td className="px-4 py-3 text-muted">{l.day_number}</td>
-                    <td className="px-4 py-3">
-                      <Link href={`/admin/lessons/${l.id}`} className="text-cream hover:text-gold-bright">
-                        {l.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-muted">{section?.title ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted">{l.task_type}</td>
-                    <td className="px-4 py-3">
-                      {l.hls_ready ? (
-                        <span className="tag tag-good">nahrané</span>
-                      ) : (
-                        <span className="tag tag-muted">chýba</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted">{l.is_free ? "zadarmo" : "platené"}</td>
-                    <td className="px-4 py-3 text-right">
-                      <form action={deleteLesson.bind(null, l.id)}>
-                        <button type="submit" className="btn btn-danger btn-sm">
-                          Zmazať
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
-                );
-              })}
-              {(lessons ?? []).length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                    Zatiaľ žiadne lekcie — pridaj prvú.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {(lessons ?? []).length === 0 ? (
+          <p className="text-muted">Zatiaľ žiadne lekcie — pridaj prvú.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {(lessons ?? []).map((l) => {
+              const section = Array.isArray(l.sections) ? l.sections[0] : l.sections;
+              return (
+                <AdminLessonCard
+                  key={l.id}
+                  lesson={{
+                    id: l.id,
+                    day_number: l.day_number,
+                    title: l.title,
+                    is_free: l.is_free,
+                    task_type: l.task_type,
+                    hls_ready: l.hls_ready,
+                    thumbnail_ready: l.thumbnail_ready,
+                    sectionTitle: section?.title ?? null,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
       </main>
     </>
   );

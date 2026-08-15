@@ -69,6 +69,7 @@ export interface Database {
           order_index: number;
           hls_ready: boolean;
           hls_segment_count: number | null;
+          thumbnail_ready: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -87,6 +88,7 @@ export interface Database {
           order_index?: number;
           hls_ready?: boolean;
           hls_segment_count?: number | null;
+          thumbnail_ready?: boolean;
           created_at?: string;
           updated_at?: string;
         };

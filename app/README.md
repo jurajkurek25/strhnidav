@@ -34,7 +34,7 @@ udeliť konkrétnemu Gmail účtu celý kurz zadarmo (`/admin/users`).
 
 1. Vytvor projekt na [supabase.com](https://supabase.com).
 2. V **SQL Editor** spusti postupne obsah všetkých súborov v
-   `supabase/migrations/` (`0001` → `0004`, v poradí podľa čísla). Vytvorí
+   `supabase/migrations/` (`0001` → `0006`, v poradí podľa čísla). Vytvorí
    to všetky tabuľky, RLS politiky a storage buckety (`lesson-documents`,
    `lesson-audio`, `task-uploads`, `lock-art` sú privátne;
    `lesson-videos-hls` je verejný — obsahuje len zašifrované segmenty videa,
@@ -147,6 +147,10 @@ ktorý má danú lekciu skutočne odomknutú — cez `/api/video-key/[lessonId]`
 prístupu ako všade inde v appke. Kľúč je v databáze v tabuľke
 `lesson_video_keys`, ktorá nemá žiadnu RLS politiku pre bežných
 používateľov — prečítať ju vie len server (service role kľúč).
+
+Pri tom istom spracovaní appka cez ffmpeg vytiahne aj náhľadový obrázok
+(snímka z videa ~1s), ktorý sa ukazuje na dashboarde aj v admin prehľade
+lekcií namiesto prázdneho placeholderu.
 
 Toto **nie je** to isté ako Widevine/FairPlay/PlayReady (tie sa nedajú
 postaviť bez certifikácie od Google/Apple/Microsoftu cez ich partnerov).
