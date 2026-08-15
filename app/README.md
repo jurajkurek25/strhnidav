@@ -127,7 +127,40 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
    Na neskoršiu aktualizáciu (nová verzia appky) spusti presne tú istú
    sekvenciu znova — `.env.local`, `node_modules` a `.next` sa tým
    neprepíšu (nie sú v gite), len sa nahradí zdrojový kód a appka sa
-   znova zostaví.
+   znova zostaví. **Pozor:** `rm -rf tmp-clone` maže aj `.git` — cieľový
+   priečinok teda nikdy nie je git repozitár a `git pull` v ňom vždy
+   zlyhá s `fatal: not a git repository`. Pre pohodlnejšie aktualizácie
+   nastav radšej trvalý klon nabok (jednorazovo), pozri nižšie.
+
+   **Trvalý klon + update skript (odporúčané pre opakované aktualizácie):**
+
+   ```bash
+   git clone --branch claude/membership-course-app-4orr1v \
+     https://github.com/jurajkurek25/strhnidav.git /home/strhnidav-kurz/repo
+   ```
+
+   Ulož ako `/home/strhnidav-kurz/update-strhnidav.sh`:
+
+   ```bash
+   #!/bin/bash
+   set -e
+   cd /home/strhnidav-kurz/repo
+   git pull origin claude/membership-course-app-4orr1v
+   rsync -a --exclude='.env' --exclude='.env.local' \
+     --exclude='node_modules' --exclude='.next' \
+     app/ /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk/
+   cd /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk
+   npm install
+   npm run build
+   pm2 restart strhnidav
+   ```
+
+   ```bash
+   chmod +x /home/strhnidav-kurz/update-strhnidav.sh
+   ```
+
+   Odvtedy stačí pri každej novej verzii appky spustiť
+   `/home/strhnidav-kurz/update-strhnidav.sh`.
 
 3. **Beh appky** — cez CloudPanel's vlastnú Node.js správu (Site → Node.js
    → Start Command: `npm run start`) alebo cez `pm2`, ak chceš appku
