@@ -33,7 +33,7 @@ export default async function UnlockPage({
           </p>
         )}
 
-        <div className="card mt-12 grid gap-12 p-12 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div className="card mt-12 grid gap-12 p-12 md:grid-cols-[1fr_360px] md:items-start">
           <div>
             <div className="font-display text-[clamp(48px,6vw,72px)] font-semibold leading-none text-gold-bright">
               199<span className="ml-2 font-body text-[0.35em] font-medium text-muted">€ / celý kurz</span>
