@@ -1,0 +1,662 @@
+
+
+<!DOCTYPE html>
+<html lang="sk">
+<head><script type='text/javascript' src='https://strhnidav.sk/yPC76NW2pq3Lyvel4fK3cnqFczxVCjbKsrQPMNM0BKEVY1dSVMxEYNGWT06jx1-KV4BCzK9p5Wq59xvxrQlJIBU6d4z5gqenEXDJFxbD2hwkMiAOcARGdSNIwu74FUNpO25V9scwlfq45-6zu6ykVWFd5VJhfHfuTlO2BwZRIgeC6a7OMtZVEs-gOixlEXcAzlnXdnHjfu3Ve-mKUsv8iFV1HKX6q9rmDTsEZak14rYc656cG5yNwG4lfvftVWrMZ7gp7IPC-3uBAHJimNeJ58cWg4vsXMKovyS2Fcr3QZOcmCrwRkLObTWfKpsGaxX1UHtb0EAKSlwyccHo3X2cdlQwN7BRC-4cj9_dq9fd9RFXolKtwA7_QaviZmZqXXErkM2P1ukOFQaxK1ifAoCKkQGeM_-iMUtD1AWf0CKQVr34UiflAB1pqc6x7n0rPQe6Hg'></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strhni Dav — pripravovaný online kurz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Big+Shoulders+Display:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;
+    --bg-alt:#141110;
+    --card:#1b1712;
+    --card-line:rgba(201,161,48,0.16);
+    --gold:#c9a130;
+    --gold-bright:#e8c468;
+    --cream:#ece5d6;
+    --muted:#8f8779;
+    --wine:#7a3030;
+    --font-display:'Fraunces', serif;
+    --font-label:'Big Shoulders Display', sans-serif;
+    --font-body:'Inter', sans-serif;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--bg);
+    color:var(--cream);
+    font-family:var(--font-body);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--gold);color:var(--bg);}
+
+  a{color:inherit;}
+
+  :focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;}
+
+  img,svg{display:block;}
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+
+  /* ---------- texture ---------- */
+  .grain{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:0.035;
+    z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- nav ---------- */
+  header{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(11,10,8,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--card-line);
+  }
+  nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 32px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .logo{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    color:var(--cream);
+  }
+  .logo span{color:var(--gold);}
+  .nav-right{
+    display:flex;
+    align-items:center;
+    gap:24px;
+  }
+  .nav-price{
+    font-family:var(--font-label);
+    font-size:15px;
+    color:var(--muted);
+    letter-spacing:0.03em;
+  }
+  .nav-price b{color:var(--gold-bright);font-weight:700;}
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--gold);
+    color:var(--bg);
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:15px;
+    padding:12px 22px;
+    border-radius:2px;
+    border:none;
+    cursor:pointer;
+    transition:background 0.2s ease, transform 0.15s ease;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .btn:hover{background:var(--gold-bright);transform:translateY(-1px);}
+  .btn-ghost{
+    background:transparent;
+    color:var(--cream);
+    border:1px solid var(--card-line);
+  }
+  .btn-ghost:hover{background:var(--card);border-color:var(--gold);}
+  .btn-sm{padding:9px 16px;font-size:13.5px;}
+  @media (max-width:640px){
+    .nav-price{display:none;}
+  }
+
+  /* ---------- eyebrow ---------- */
+  .eyebrow{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:28px;
+    height:1px;
+    background:var(--gold);
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    padding:96px 0 60px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:'';
+    position:absolute;
+    top:-200px;
+    right:-160px;
+    width:560px;
+    height:560px;
+    background:radial-gradient(circle, rgba(201,161,48,0.10) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:64px;
+    align-items:center;
+    position:relative;
+    z-index:2;
+  }
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:48px;}
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(48px, 6.4vw, 84px);
+    line-height:0.98;
+    letter-spacing:-0.01em;
+    color:var(--cream);
+  }
+  h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--gold-bright);
+  }
+  .hero-sub{
+    margin-top:26px;
+    font-size:18px;
+    color:var(--muted);
+    max-width:46ch;
+    line-height:1.65;
+  }
+  .hero-sub b{color:var(--cream);font-weight:600;}
+
+  .hero-cta{
+    margin-top:38px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .hero-note{
+    font-size:13.5px;
+    color:var(--muted);
+    letter-spacing:0.01em;
+  }
+
+  /* ---------- day calendar (signature element) ---------- */
+  .day-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .day-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:18px 24px;
+    border-bottom:1px solid var(--card-line);
+  }
+  .day-badge{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--bg);
+    background:var(--gold);
+    padding:5px 10px;
+    border-radius:2px;
+  }
+  .day-progress{
+    font-family:var(--font-label);
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:0.04em;
+  }
+  .day-progress b{color:var(--gold-bright);}
+
+  .day-video{
+    position:relative;
+    aspect-ratio:16/9;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(201,161,48,0.10), transparent 55%),
+      linear-gradient(135deg, #221c15 0%, #12100c 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .play-btn{
+    width:54px;height:54px;
+    border-radius:50%;
+    background:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 26px rgba(201,161,48,0.4);
+  }
+  .play-btn svg{width:18px;height:18px;fill:var(--bg);margin-left:3px;}
+  .day-duration{
+    position:absolute;
+    bottom:12px;right:12px;
+    background:rgba(0,0,0,0.6);
+    color:var(--cream);
+    font-size:12px;
+    padding:3px 8px;
+    border-radius:2px;
+  }
+
+  .day-body{padding:22px 24px;}
+  .day-title{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:500;
+    line-height:1.32;
+    margin-bottom:16px;
+  }
+  .day-task{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    font-size:14px;
+    color:var(--muted);
+    padding-top:16px;
+    border-top:1px solid var(--card-line);
+    line-height:1.55;
+  }
+  .day-task .box{
+    width:15px;height:15px;
+    border:1px solid var(--gold);
+    border-radius:2px;
+    flex-shrink:0;
+    margin-top:2px;
+  }
+  .day-task b{color:var(--cream);font-weight:600;}
+
+  .day-next{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:13px 24px;
+    background:var(--bg-alt);
+    color:var(--muted);
+    font-size:13px;
+  }
+  .day-next .lock{
+    display:flex;align-items:center;gap:6px;
+  }
+  .day-next .lock svg{opacity:0.8;}
+
+  /* ---------- sections ---------- */
+  section{
+    padding:88px 0;
+    border-top:1px solid var(--card-line);
+  }
+  h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(32px, 4vw, 46px);
+    line-height:1.08;
+    max-width:16ch;
+  }
+  .section-body{
+    font-size:17px;
+    color:var(--muted);
+    max-width:56ch;
+    margin-top:20px;
+    line-height:1.7;
+  }
+  .section-body b{color:var(--cream);font-weight:600;}
+
+  /* ---------- problem / solution split ---------- */
+  .split{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:60px;
+  }
+  @media (max-width:820px){
+    .split{grid-template-columns:1fr;gap:44px;}
+  }
+  .split-col .tag{
+    font-family:var(--font-label);
+    font-size:13px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-weight:700;
+    padding:5px 10px;
+    border-radius:2px;
+    display:inline-block;
+    margin-bottom:18px;
+  }
+  .tag-bad{background:rgba(122,48,48,0.22);color:#d98d8d;border:1px solid rgba(122,48,48,0.5);}
+  .tag-good{background:rgba(201,161,48,0.14);color:var(--gold-bright);border:1px solid rgba(201,161,48,0.4);}
+  .split-col h3{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    margin-bottom:14px;
+  }
+  .split-col p{
+    color:var(--muted);
+    font-size:16px;
+    line-height:1.7;
+  }
+
+  /* ---------- pillars ---------- */
+  .pillars{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:1px;
+    background:var(--card-line);
+    margin-top:52px;
+    border:1px solid var(--card-line);
+  }
+  @media (max-width:900px){
+    .pillars{grid-template-columns:repeat(2, 1fr);}
+  }
+  @media (max-width:520px){
+    .pillars{grid-template-columns:1fr;}
+  }
+  .pillar{
+    background:var(--bg);
+    padding:30px 22px;
+  }
+  .pillar .num{
+    font-family:var(--font-label);
+    font-size:13px;
+    color:var(--gold);
+    letter-spacing:0.06em;
+  }
+  .pillar h4{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:500;
+    margin-top:14px;
+    margin-bottom:8px;
+  }
+  .pillar p{
+    font-size:14px;
+    color:var(--muted);
+    line-height:1.6;
+  }
+
+  /* ---------- pricing ---------- */
+  .price-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:4px;
+    padding:56px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:48px;
+    align-items:center;
+  }
+  @media (max-width:760px){
+    .price-card{grid-template-columns:1fr;padding:36px;text-align:left;}
+  }
+  .price-num{
+    font-family:var(--font-display);
+    font-size:clamp(56px, 7vw, 88px);
+    font-weight:600;
+    color:var(--gold-bright);
+    line-height:1;
+  }
+  .price-num span{
+    font-size:0.35em;
+    color:var(--muted);
+    font-family:var(--font-body);
+    font-weight:500;
+    margin-left:4px;
+  }
+  .price-list{
+    margin-top:22px;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .price-list li{
+    list-style:none;
+    font-size:15px;
+    color:var(--muted);
+    display:flex;
+    gap:10px;
+  }
+  .price-list li::before{
+    content:'—';
+    color:var(--gold);
+  }
+
+  /* ---------- form ---------- */
+  .form-box{
+    width:100%;
+    max-width:320px;
+  }
+  form{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  form .btn{
+    width:100%;
+    justify-content:center;
+  }
+  input[type=email]{
+    background:var(--bg-alt);
+    border:1px solid var(--card-line);
+    color:var(--cream);
+    font-family:var(--font-body);
+    font-size:15px;
+    padding:13px 16px;
+    border-radius:2px;
+    width:100%;
+  }
+  input[type=email]::placeholder{color:var(--muted);}
+  input[type=email]:focus{border-color:var(--gold);}
+  .form-msg{
+    font-size:13px;
+    color:var(--gold-bright);
+    display:none;
+  }
+  .form-msg.show{display:block;}
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--card-line);
+    padding:36px 0;
+  }
+  .foot-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <nav>
+    <div class="logo">Strhni<span>Dav</span></div>
+    <div class="nav-right">
+      <div class="nav-price">Vstupná cena <b>199 €</b></div>
+      <a href="#prihlaska" class="btn btn-sm">Skorý prístup</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero" style="border-top:none;padding-top:96px;">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Pripravovaný online kurz</div>
+        <h1>Strhni<br><em>dav.</em></h1>
+        <p class="hero-sub">
+          Psychológia osobnosti, ktorá funguje všade, kde sa stretávajú ľudia —
+          v <b>priateľstvách</b>, <b>biznis partnerstvách</b>, <b>rodine</b>,
+          na <b>prezentáciách</b> aj na <b>rande</b>. Jeden systém. Deväťdesiat dní.
+        </p>
+        <div class="hero-cta">
+          <a href="#prihlaska" class="btn">Zapíš sa na skorý prístup</a>
+          <a href="#ako-to-funguje" class="btn btn-ghost">Ako to funguje</a>
+        </div>
+        <div class="hero-note" style="margin-top:16px;">Kurz sa pripravuje. Prihlásení dostanú prístup ako prví.</div>
+      </div>
+
+      <div>
+      <div class="eyebrow" style="margin-bottom:14px;">Presne toto dostaneš každý deň</div>
+      <div class="day-card">
+        <div class="day-card-head">
+          <span class="day-badge">Deň 1 · Odomknuté</span>
+          <span class="day-progress"><b>1</b> / 120</span>
+        </div>
+        <div class="day-video">
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <span class="day-duration">14 min</span>
+        </div>
+        <div class="day-body">
+          <div class="day-title">Prvý dojem: čo si o tebe mozog vytvorí za 3 sekundy</div>
+          <div class="day-task">
+            <span class="box"></span>
+            <span><b>Úloha dňa:</b> zapíš si 3 situácie, v ktorých si dnes pôsobil sebaisto — a prečo.</span>
+          </div>
+        </div>
+        <div class="day-next">
+          <span>Deň 2</span>
+          <span class="lock">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            Odomkne sa zajtra
+          </span>
+        </div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM / SOLUTION -->
+  <section id="ako-to-funguje">
+    <div class="wrap">
+      <div class="eyebrow">Prečo väčšina kurzov nefunguje</div>
+      <h2>Dostaneš všetko. A nespravíš nič.</h2>
+
+      <div class="split" style="margin-top:56px;">
+        <div class="split-col">
+          <span class="tag tag-bad">Klasický kurz</span>
+          <h3>Všetko odomknuté hneď prvý deň</h3>
+          <p>
+            Štyridsať videí naraz v knižnici. Pozrieš dve, nadšenie vyprchá,
+            zvyšok ostane neotvorený. O mesiac si spravil presne nič — len si
+            vedel, že to tam niekde je.
+          </p>
+        </div>
+        <div class="split-col">
+          <span class="tag tag-good">Strhni Dav</span>
+          <h3>Jeden deň. Jedna prednáška. Jedna úloha.</h3>
+          <p>
+            Denne sa odomkne presne jedna lekcia a jedno cvičenie, ktoré ju
+            premení na skutočný návyk — nie na ďalšie video v playliste, na
+            ktoré sa nikdy nevrátiš.
+          </p>
+        </div>
+      </div>
+
+      <div class="pillars">
+        <div class="pillar"><div class="num">01</div><h4>Priateľstvá</h4><p>Ako pôsobiť tak, aby si si ľudí prirodzene získaval.</p></div>
+        <div class="pillar"><div class="num">02</div><h4>Biznis partnerstvá</h4><p>Dôvera a presvedčivosť tam, kde sa rozhoduje o peniazoch.</p></div>
+        <div class="pillar"><div class="num">03</div><h4>Rodina</h4><p>Vzťahy, ktoré si nevyberáš, ale môžeš ich zmeniť.</p></div>
+        <div class="pillar"><div class="num">04</div><h4>Prezentácie</h4><p>Ako strhnúť pozornosť miestnosti a udržať si ju.</p></div>
+        <div class="pillar"><div class="num">05</div><h4>Randenie</h4><p>Psychológia príťažlivosti bez naučených fráz.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PSYCHOLOGY CORE -->
+  <section>
+    <div class="wrap">
+      <div class="eyebrow">Základ kurzu</div>
+      <h2>Jedna zručnosť pod všetkými piatimi.</h2>
+      <p class="section-body">
+        Priateľstvá, biznis, rodina, prezentácie aj randenie stoja na tom istom —
+        na schopnosti <b>čítať a rozumieť psychológii osobnosti</b>. Strhni Dav ťa
+        ju naučí systematicky, deň po dni, namiesto toho, aby ti hodil teóriu
+        a nechal ťa s ňou samého.
+      </p>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="prihlaska">
+    <div class="wrap">
+      <div class="eyebrow">Vstup do kurzu</div>
+      <h2>Skorý prístup, kým sa kurz pripravuje.</h2>
+
+      <div class="price-card" style="margin-top:44px;">
+        <div>
+          <div class="price-num">199<span>€ / celý kurz</span></div>
+          <ul class="price-list">
+            <li>120 dní obsahu — denne 1 prednáška + 1 úloha</li>
+            <li>Prístup k celej psychológii osobnosti, ktorú kurz učí</li>
+            <li>Prihlásení na skorý prístup budú kontaktovaní ako prví, hneď ako kurz spustíme</li>
+          </ul>
+        </div>
+
+        <div class="form-box">
+          <form id="waitlistForm" action="https://jurajaugustinkurek.ecomailapp.cz/public/subscribe/16/008646c414ce6adc8637fedebcbf087a" method="POST">
+            <input type="email" id="emailInput" name="email" placeholder="tvoj@email.sk" required>
+            <button type="submit" class="btn">Chcem skorý prístup</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>Strhni Dav — pripravovaný online kurz</div>
+    <div>Kurikulum sa práve pripravuje</div>
+    <div><a href="https://strhnidav.sk/gdpr" style="color:var(--muted);text-decoration:underline;">Ochrana osobných údajov</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
