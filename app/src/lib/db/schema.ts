@@ -150,7 +150,7 @@ export const payments = pgTable("payments", {
   status: text("status").$type<PaymentStatus>().notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   // Set only if the user checked the "okamžité sprístupnenie" consent box
-  // before starting checkout — see čl. 6 Obchodných podmienok. Evidence
+  // before starting checkout — see čl. 7 Obchodných podmienok. Evidence
   // that the digital-content withdrawal-right exception was invoked.
   withdrawalConsentAt: timestamp("withdrawal_consent_at", { withTimezone: true }),
 });

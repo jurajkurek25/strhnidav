@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     metadata: {
       user_id: session.user.id,
       // Checked before this request was sent — see UnlockButton's consent
-      // checkbox and čl. 6 Obchodných podmienok.
+      // checkbox and čl. 7 Obchodných podmienok.
       withdrawal_consent_at: new Date().toISOString(),
     },
     line_items: [
