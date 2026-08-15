@@ -21,7 +21,7 @@ export default async function AdminUsersPage() {
   return (
     <>
       <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
-      <main className="wrap py-10">
+      <main className="wrap py-12">
         <div className="eyebrow mb-4">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Členovia</h1>
         <AdminNav active="/admin/users" />

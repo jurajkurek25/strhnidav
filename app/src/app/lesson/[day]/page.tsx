@@ -47,7 +47,7 @@ export default async function LessonPage({
     return (
       <>
         {header}
-        <main className="wrap py-10">
+        <main className="wrap py-12">
           <LockedLessonView state={entry.state} unlocksAt={entry.unlocksAt} dayNumber={dayNumber} />
           <div className="mt-6">
             <LessonNav prev={prev} next={next} />
@@ -130,7 +130,7 @@ export default async function LessonPage({
   return (
     <>
       {header}
-      <main className="wrap py-10">
+      <main className="wrap py-12">
         <div className="mb-6 flex items-center justify-between">
           <div className="eyebrow">Deň {lesson.day_number} / {states.length}</div>
           {entry.state === "completed" && <span className="tag tag-good">Hotovo</span>}

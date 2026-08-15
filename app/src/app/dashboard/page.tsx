@@ -40,7 +40,7 @@ export default async function DashboardPage() {
         isAdmin={profile.is_admin}
         hasFullAccess={profile.has_full_access}
       />
-      <main className="wrap py-12">
+      <main className="wrap py-14">
         <div className="eyebrow mb-4">Členská sekcia</div>
         <h1 className="font-display text-[clamp(30px,4vw,44px)] font-semibold leading-tight">
           Vitaj späť{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}.
