@@ -43,6 +43,8 @@ export default async function UnlockPage({
                 "Prístup ku všetkým lekciám kurzu",
                 "Ďalšie lekcie sa naďalej odomykajú deň po dni podľa tvojho postupu",
                 "Diskusia, dokumenty a audio ku každej lekcii",
+                "Konkrétne akčné kroky pri každej lekcii",
+                "Overiteľný certifikát o úspešnom absolvovaní kurzu",
               ].map((li) => (
                 <li key={li} className="flex gap-3.5 text-[15px] text-muted">
                   <span className="text-gold">—</span>
