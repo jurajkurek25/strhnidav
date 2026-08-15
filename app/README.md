@@ -4,7 +4,9 @@ Next.js aplikácia pre členskú sekciu kurzu Strhni Dav. Google prihlásenie,
 denne odomykané lekcie (video + AI-vyhodnocovaná úloha), platba 199 € cez
 Stripe na odomknutie celého kurzu po prvých 7 bezplatných lekciách, a
 plnohodnotný admin panel pre `jurajkurek2006@gmail.com` — vrátane možnosti
-udeliť konkrétnemu Gmail účtu celý kurz zadarmo (`/admin/users`).
+udeliť konkrétnemu Gmail účtu celý kurz zadarmo (`/admin/users`) a
+drag-and-drop preusporiadania (poradie dní, sekcií, akčných krokov aj
+dokumentov/audia v rámci lekcie).
 
 ## Ako funguje odomykanie
 

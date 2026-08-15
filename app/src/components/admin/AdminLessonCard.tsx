@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { publicThumbnailUrl } from "@/lib/hls";
+import { publicThumbnailUrl } from "@/lib/media-urls";
 import { deleteLesson } from "@/app/admin/actions";
 
 const TASK_LABELS: Record<string, string> = {
@@ -11,6 +12,7 @@ const TASK_LABELS: Record<string, string> = {
 
 export function AdminLessonCard({
   lesson,
+  dragHandle,
 }: {
   lesson: {
     id: string;
@@ -22,19 +24,21 @@ export function AdminLessonCard({
     thumbnail_ready: boolean;
     sectionTitle: string | null;
   };
+  dragHandle?: ReactNode;
 }) {
   const hasThumbnail = lesson.thumbnail_ready;
 
   return (
     <div className="card flex flex-col overflow-hidden">
-      <Link href={`/admin/lessons/${lesson.id}`} className="block">
-        <div
-          className="relative aspect-video w-full overflow-hidden"
-          style={{
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(201,161,48,0.10), transparent 55%), linear-gradient(135deg, #221c15 0%, #12100c 100%)",
-          }}
-        >
+      <div className="relative aspect-video w-full overflow-hidden">
+        <Link href={`/admin/lessons/${lesson.id}`} className="absolute inset-0 block">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 30% 30%, rgba(201,161,48,0.10), transparent 55%), linear-gradient(135deg, #221c15 0%, #12100c 100%)",
+            }}
+          />
           {hasThumbnail ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -47,11 +51,14 @@ export function AdminLessonCard({
               Bez videa
             </div>
           )}
-          <span className="absolute left-2.5 top-2.5 rounded-sm bg-bg/80 px-2 py-1 font-label text-[12px] tracking-wide text-cream">
-            Deň {lesson.day_number}
-          </span>
-        </div>
-      </Link>
+        </Link>
+        <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-sm bg-bg/80 px-2 py-1 font-label text-[12px] tracking-wide text-cream">
+          Deň {lesson.day_number}
+        </span>
+        {dragHandle && (
+          <span className="absolute right-2.5 top-2.5 rounded-sm bg-bg/80 p-1">{dragHandle}</span>
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">
         <Link

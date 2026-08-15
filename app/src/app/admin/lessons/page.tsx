@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
-import { AdminLessonCard } from "@/components/admin/AdminLessonCard";
+import { SortableLessonsGrid } from "@/components/admin/SortableLessonsGrid";
 
 export default async function AdminLessonsPage() {
   const profile = await requireAdmin();
@@ -25,31 +25,25 @@ export default async function AdminLessonsPage() {
           </Link>
         </div>
         <AdminNav active="/admin/lessons" />
+        <p className="mb-6 -mt-2 text-xs text-muted">
+          Potiahni kartu za úchytku vpravo hore, aby si zmenil poradie dní.
+        </p>
 
-        {(lessons ?? []).length === 0 ? (
-          <p className="text-muted">Zatiaľ žiadne lekcie — pridaj prvú.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {(lessons ?? []).map((l) => {
-              const section = Array.isArray(l.sections) ? l.sections[0] : l.sections;
-              return (
-                <AdminLessonCard
-                  key={l.id}
-                  lesson={{
-                    id: l.id,
-                    day_number: l.day_number,
-                    title: l.title,
-                    is_free: l.is_free,
-                    task_type: l.task_type,
-                    hls_ready: l.hls_ready,
-                    thumbnail_ready: l.thumbnail_ready,
-                    sectionTitle: section?.title ?? null,
-                  }}
-                />
-              );
-            })}
-          </div>
-        )}
+        <SortableLessonsGrid
+          initialLessons={(lessons ?? []).map((l) => {
+            const section = Array.isArray(l.sections) ? l.sections[0] : l.sections;
+            return {
+              id: l.id,
+              day_number: l.day_number,
+              title: l.title,
+              is_free: l.is_free,
+              task_type: l.task_type,
+              hls_ready: l.hls_ready,
+              thumbnail_ready: l.thumbnail_ready,
+              sectionTitle: section?.title ?? null,
+            };
+          })}
+        />
       </main>
     </>
   );

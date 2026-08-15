@@ -37,6 +37,15 @@ export async function deleteSection(id: string) {
   revalidatePath("/admin/sections");
 }
 
+export async function reorderSections(orderedIds: string[]) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await Promise.all(
+    orderedIds.map((id, i) => admin.from("sections").update({ order_index: i }).eq("id", id))
+  );
+  revalidatePath("/admin/sections");
+}
+
 // ---------------------------------------------------------------------------
 // lessons
 // ---------------------------------------------------------------------------
@@ -96,7 +105,7 @@ export async function saveLesson(formData: FormData) {
 
   // Optional manual thumbnail — wins over the auto-extracted video frame,
   // whether uploaded now or later. Stored at a fixed path/content-type-only
-  // distinction (see lib/hls.ts's publicThumbnailUrl), so any image format works.
+  // distinction (see lib/media-urls.ts's publicThumbnailUrl), so any image format works.
   const thumbnail = formData.get("thumbnail");
   if (thumbnail instanceof File && thumbnail.size > 0) {
     const result = await uploadToBucket(
@@ -193,17 +202,61 @@ export async function deleteLesson(id: string) {
   revalidatePath("/admin/lessons");
 }
 
-export async function deleteDocument(id: string, lessonId: string) {
+/**
+ * Renumbers day_number to match the drag-and-drop order. Two-phase because
+ * day_number is UNIQUE — writing final values directly could collide with
+ * another lesson's current number mid-sequence. Negative placeholders can
+ * never collide with a real (positive) day_number, so phase one always
+ * clears the table before phase two assigns the real 1..N numbers.
+ * Renumbering is safe for gating: progress is keyed by lesson_id, and
+ * day_number is only ever used as a sort/display key (src/lib/gating.ts).
+ */
+export async function reorderLessons(orderedIds: string[]) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await Promise.all(
+    orderedIds.map((id, i) => admin.from("lessons").update({ day_number: -(i + 1) }).eq("id", id))
+  );
+  await Promise.all(
+    orderedIds.map((id, i) => admin.from("lessons").update({ day_number: i + 1 }).eq("id", id))
+  );
+  revalidatePath("/admin/lessons");
+  revalidatePath("/dashboard");
+}
+
+// lessonId comes first (not id) so LessonForm can pass a
+// deleteDocument.bind(null, lesson.id) reference straight into the client
+// SortableFileList — inline arrow functions can't cross the server/client
+// boundary as props, only direct server action references (bound or not) can.
+export async function deleteDocument(lessonId: string, id: string) {
   await requireAdmin();
   const admin = createAdminClient();
   await admin.from("lesson_documents").delete().eq("id", id);
   revalidatePath(`/admin/lessons/${lessonId}`);
 }
 
-export async function deleteAudio(id: string, lessonId: string) {
+export async function reorderDocuments(lessonId: string, orderedIds: string[]) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await Promise.all(
+    orderedIds.map((id, i) => admin.from("lesson_documents").update({ order_index: i }).eq("id", id))
+  );
+  revalidatePath(`/admin/lessons/${lessonId}`);
+}
+
+export async function deleteAudio(lessonId: string, id: string) {
   await requireAdmin();
   const admin = createAdminClient();
   await admin.from("lesson_audio").delete().eq("id", id);
+  revalidatePath(`/admin/lessons/${lessonId}`);
+}
+
+export async function reorderAudio(lessonId: string, orderedIds: string[]) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await Promise.all(
+    orderedIds.map((id, i) => admin.from("lesson_audio").update({ order_index: i }).eq("id", id))
+  );
   revalidatePath(`/admin/lessons/${lessonId}`);
 }
 

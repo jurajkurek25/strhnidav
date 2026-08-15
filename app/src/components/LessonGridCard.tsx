@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LockIcon } from "@/components/LockIcon";
-import { publicThumbnailUrl } from "@/lib/hls";
+import { publicThumbnailUrl } from "@/lib/media-urls";
 import type { LessonWithState } from "@/lib/gating";
 
 function formatUnlockDate(date: Date): string {

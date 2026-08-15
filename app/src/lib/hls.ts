@@ -155,12 +155,3 @@ async function extractThumbnail(
   }
 }
 
-export function publicHlsPlaylistUrl(lessonId: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  return `${base}/storage/v1/object/public/${HLS_BUCKET}/${lessonId}/playlist.m3u8`;
-}
-
-export function publicThumbnailUrl(lessonId: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  return `${base}/storage/v1/object/public/${THUMBNAIL_BUCKET}/${lessonId}/thumbnail.jpg`;
-}

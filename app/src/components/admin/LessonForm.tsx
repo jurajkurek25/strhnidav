@@ -1,6 +1,13 @@
-import { saveLesson, deleteDocument, deleteAudio } from "@/app/admin/actions";
+import {
+  saveLesson,
+  deleteDocument,
+  reorderDocuments,
+  deleteAudio,
+  reorderAudio,
+} from "@/app/admin/actions";
 import { ActionStepsEditor } from "@/components/admin/ActionStepsEditor";
-import { publicThumbnailUrl } from "@/lib/hls";
+import { SortableFileList } from "@/components/admin/SortableFileList";
+import { publicThumbnailUrl } from "@/lib/media-urls";
 import type { Database } from "@/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
@@ -134,42 +141,26 @@ export function LessonForm({
 
       <div className="card flex flex-col gap-4 p-6">
         <h2 className="font-display text-lg font-medium">Dokumenty na stiahnutie</h2>
-        {documents.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {documents.map((d) => (
-              <li key={d.id} className="flex items-center justify-between text-sm">
-                <span className="text-cream">{d.title}</span>
-                {lesson && (
-                  <form action={deleteDocument.bind(null, d.id, lesson.id)}>
-                    <button type="submit" className="text-xs text-muted hover:text-[#d98d8d]">
-                      Odstrániť
-                    </button>
-                  </form>
-                )}
-              </li>
-            ))}
-          </ul>
+        {lesson && documents.length > 0 && (
+          <SortableFileList
+            dndId="documents"
+            initialItems={documents.map((d) => ({ id: d.id, title: d.title }))}
+            onReorder={reorderDocuments.bind(null, lesson.id)}
+            onDelete={deleteDocument.bind(null, lesson.id)}
+          />
         )}
         <input type="file" name="new_documents" multiple />
       </div>
 
       <div className="card flex flex-col gap-4 p-6">
         <h2 className="font-display text-lg font-medium">Audio na stiahnutie</h2>
-        {audio.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {audio.map((a) => (
-              <li key={a.id} className="flex items-center justify-between text-sm">
-                <span className="text-cream">{a.title}</span>
-                {lesson && (
-                  <form action={deleteAudio.bind(null, a.id, lesson.id)}>
-                    <button type="submit" className="text-xs text-muted hover:text-[#d98d8d]">
-                      Odstrániť
-                    </button>
-                  </form>
-                )}
-              </li>
-            ))}
-          </ul>
+        {lesson && audio.length > 0 && (
+          <SortableFileList
+            dndId="audio"
+            initialItems={audio.map((a) => ({ id: a.id, title: a.title }))}
+            onReorder={reorderAudio.bind(null, lesson.id)}
+            onDelete={deleteAudio.bind(null, lesson.id)}
+          />
         )}
         <input type="file" name="new_audio" multiple accept="audio/*" />
       </div>

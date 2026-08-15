@@ -3,7 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getLessonStatesForUser, statesByDayNumber } from "@/lib/course";
 import { signedDownloadUrl } from "@/lib/media";
-import { publicHlsPlaylistUrl } from "@/lib/hls";
+import { publicHlsPlaylistUrl } from "@/lib/media-urls";
 import { Header } from "@/components/Header";
 import { LessonNav } from "@/components/LessonNav";
 import { LockedLessonView } from "@/components/LockedLessonView";

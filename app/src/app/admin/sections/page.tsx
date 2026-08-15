@@ -2,7 +2,8 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
-import { createSection, deleteSection } from "@/app/admin/actions";
+import { SortableSections } from "@/components/admin/SortableSections";
+import { createSection } from "@/app/admin/actions";
 
 export default async function AdminSectionsPage() {
   const profile = await requireAdmin();
@@ -21,28 +22,14 @@ export default async function AdminSectionsPage() {
         <AdminNav active="/admin/sections" />
 
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-          <ul className="flex flex-col gap-2.5">
-            {(sections ?? []).map((s) => {
-              const lessonCount = Array.isArray(s.lessons) ? (s.lessons[0]?.count ?? 0) : 0;
-              return (
-                <li key={s.id} className="card flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium text-cream">{s.title}</p>
-                    {s.description && <p className="mt-1 text-sm text-muted">{s.description}</p>}
-                    <p className="mt-1 text-xs text-muted">{lessonCount} lekcií</p>
-                  </div>
-                  <form action={deleteSection.bind(null, s.id)}>
-                    <button type="submit" className="btn btn-danger btn-sm">
-                      Zmazať
-                    </button>
-                  </form>
-                </li>
-              );
-            })}
-            {(sections ?? []).length === 0 && (
-              <p className="text-sm text-muted">Zatiaľ žiadne sekcie.</p>
-            )}
-          </ul>
+          <SortableSections
+            initialSections={(sections ?? []).map((s) => ({
+              id: s.id,
+              title: s.title,
+              description: s.description,
+              lessonCount: Array.isArray(s.lessons) ? (s.lessons[0]?.count ?? 0) : 0,
+            }))}
+          />
 
           <form action={createSection} className="card flex flex-col gap-3 p-5 h-fit">
             <h2 className="font-display text-base font-medium">Nová sekcia</h2>
