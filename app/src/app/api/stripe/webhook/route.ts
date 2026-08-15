@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
     if (userId) {
       const now = new Date();
+      const consentAt = session.metadata?.withdrawal_consent_at;
 
       await db
         .update(profiles)
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
           amountCents: session.amount_total ?? 19900,
           currency: session.currency ?? "eur",
           status: "paid",
+          withdrawalConsentAt: consentAt ? new Date(consentAt) : null,
         })
         .onConflictDoUpdate({
           target: payments.stripeSessionId,

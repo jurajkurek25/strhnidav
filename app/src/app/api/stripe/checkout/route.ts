@@ -5,9 +5,14 @@ import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
 import { stripe, COURSE_PRICE_EUR } from "@/lib/stripe";
 
-export async function POST() {
+export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const body = await request.json().catch(() => ({}));
+  if (body?.consent !== true) {
+    return NextResponse.json({ error: "consent-required" }, { status: 400 });
+  }
 
   const [profile] = await db
     .select({ hasFullAccess: profiles.hasFullAccess, email: profiles.email })
@@ -25,7 +30,12 @@ export async function POST() {
     mode: "payment",
     client_reference_id: session.user.id,
     customer_email: profile?.email ?? session.user.email ?? undefined,
-    metadata: { user_id: session.user.id },
+    metadata: {
+      user_id: session.user.id,
+      // Checked before this request was sent — see UnlockButton's consent
+      // checkbox and čl. 6 Obchodných podmienok.
+      withdrawal_consent_at: new Date().toISOString(),
+    },
     line_items: [
       priceId
         ? { price: priceId, quantity: 1 }
