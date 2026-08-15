@@ -75,10 +75,13 @@ export async function packageLessonVideoAsEncryptedHls(
     await writeFile(keyInfoPath, `${keyUri}\n${keyPath}\n${iv}\n`);
 
     const playlistPath = path.join(outDir, "playlist.m3u8");
-    const commonArgs = [
-      "-y",
-      "-i",
-      inputPath,
+    // ffmpeg's argument position matters: flags before -i apply to input
+    // decoding, flags after apply to output encoding. Codec selection
+    // (-c / -c:v / -c:a) belongs in outputArgs — putting it before -i (as
+    // this used to) makes ffmpeg treat e.g. "libx264" as a requested
+    // *decoder*, which doesn't exist and fails with "Unknown decoder".
+    const inputArgs = ["-y", "-i", inputPath];
+    const outputArgs = [
       "-start_number",
       "0",
       "-hls_time",
@@ -97,10 +100,10 @@ export async function packageLessonVideoAsEncryptedHls(
     try {
       // Fast path: remux without re-encoding (works when the source is
       // already H.264/AAC, which covers most screen/webcam recordings).
-      await runFfmpeg(["-c", "copy", ...commonArgs]);
+      await runFfmpeg([...inputArgs, "-c", "copy", ...outputArgs]);
     } catch {
       // Fallback: re-encode for sources -c copy can't segment cleanly.
-      await runFfmpeg(["-c:v", "libx264", "-c:a", "aac", ...commonArgs]);
+      await runFfmpeg([...inputArgs, "-c:v", "libx264", "-c:a", "aac", ...outputArgs]);
     }
 
     const files = (await readdir(outDir)).sort();
