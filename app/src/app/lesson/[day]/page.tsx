@@ -77,10 +77,23 @@ export default async function LessonPage({
         .limit(1),
       supabase
         .from("comments")
-        .select("id, body, created_at, user_id, profiles(full_name, avatar_url)")
+        .select("id, body, created_at, user_id")
         .eq("lesson_id", lesson.id)
         .order("created_at", { ascending: true }),
     ]);
+
+  // profiles' only SELECT policy is "own row" (see supabase/migrations/0001),
+  // so author names/avatars for OTHER members come from the public view
+  // instead of embedding profiles directly — see 0005_public_member_profiles.sql.
+  const commentAuthorIds = [...new Set((rawComments ?? []).map((c) => c.user_id))];
+  const { data: commentAuthors } =
+    commentAuthorIds.length > 0
+      ? await supabase
+          .from("public_member_profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", commentAuthorIds)
+      : { data: [] };
+  const authorById = new Map((commentAuthors ?? []).map((a) => [a.id, a]));
 
   const videoSrc = lesson.hls_ready ? publicHlsPlaylistUrl(lesson.id) : null;
 
@@ -103,7 +116,7 @@ export default async function LessonPage({
   const latestSubmission = submissions?.[0] ?? null;
 
   const comments = (rawComments ?? []).map((c) => {
-    const author = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
+    const author = authorById.get(c.user_id);
     return {
       id: c.id,
       body: c.body,

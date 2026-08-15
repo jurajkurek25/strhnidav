@@ -327,6 +327,16 @@ export interface Database {
           }
         ];
       };
+      public_member_profiles: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       free_access_grants: {
         Row: {
           id: string;
