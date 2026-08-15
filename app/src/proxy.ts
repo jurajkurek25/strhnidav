@@ -30,18 +30,7 @@ export async function proxy(request: NextRequest) {
 
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
-
-  // TEMPORARY diagnostic logging — remove once the refresh→login-redirect
-  // issue is diagnosed. Check with `pm2 logs strhnidav`.
-  console.log("[proxy]", {
-    pathname: request.nextUrl.pathname,
-    hasCookie: request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token")),
-    cookieNames: request.cookies.getAll().map((c) => c.name),
-    user: user ? { id: user.id, email: user.email } : null,
-    userError: userError ? { message: userError.message, status: userError.status, name: userError.name } : null,
-  });
 
   const { pathname } = request.nextUrl;
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -68,7 +57,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname === "/" && user) {
+  // An already-authenticated user hitting "/" or "/login" (e.g. after a
+  // refresh, or Google's OAuth screen bouncing back to a cached tab) lands
+  // on their real destination instead of re-showing the login form.
+  if ((pathname === "/" || pathname === "/login") && user) {
     const url = request.nextUrl.clone();
     url.pathname = isAdmin ? "/admin" : "/dashboard";
     return NextResponse.redirect(url);
