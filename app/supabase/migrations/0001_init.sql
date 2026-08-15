@@ -221,9 +221,12 @@ create policy "payments_select_own" on payments for select using (auth.uid() = u
 -- URLs issued by server-side API routes after an access check, never exposed
 -- directly to the client).
 -- ---------------------------------------------------------------------------
+-- Note: encrypted lesson video segments live in the public `lesson-videos-hls`
+-- bucket, created in 0003_video_encryption.sql (safe to be public — they're
+-- AES-128 encrypted and useless without the key served from
+-- /api/video-key/[lessonId]).
 insert into storage.buckets (id, name, public)
 values
-  ('lesson-videos', 'lesson-videos', false),
   ('lesson-documents', 'lesson-documents', false),
   ('lesson-audio', 'lesson-audio', false),
   ('task-uploads', 'task-uploads', false),

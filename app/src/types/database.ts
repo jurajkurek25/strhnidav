@@ -67,6 +67,8 @@ export interface Database {
           task_type: TaskType;
           task_prompt: string | null;
           order_index: number;
+          hls_ready: boolean;
+          hls_segment_count: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -83,6 +85,8 @@ export interface Database {
           task_type?: TaskType;
           task_prompt?: string | null;
           order_index?: number;
+          hls_ready?: boolean;
+          hls_segment_count?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -319,6 +323,29 @@ export interface Database {
             foreignKeyName: "comments_parent_id_fkey";
             columns: ["parent_id"];
             referencedRelation: "comments";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      lesson_video_keys: {
+        Row: {
+          lesson_id: string;
+          key_id: string;
+          aes_key_base64: string;
+          created_at: string;
+        };
+        Insert: {
+          lesson_id: string;
+          key_id: string;
+          aes_key_base64: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["lesson_video_keys"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "lesson_video_keys_lesson_id_fkey";
+            columns: ["lesson_id"];
+            referencedRelation: "lessons";
             referencedColumns: ["id"];
           }
         ];

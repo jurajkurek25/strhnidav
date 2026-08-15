@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadToBucket } from "@/lib/media";
+import { packageLessonVideoAsEncryptedHls } from "@/lib/hls";
 import type { TaskType } from "@/types/database";
 
 // ---------------------------------------------------------------------------
@@ -81,15 +82,14 @@ export async function saveLesson(formData: FormData) {
     id = data.id;
   }
 
-  // Optional new video file replaces the existing one.
+  // Optional new video file replaces the existing one — packaged into
+  // AES-128 encrypted HLS (see src/lib/hls.ts) rather than stored raw.
   const video = formData.get("video");
   if (video instanceof File && video.size > 0) {
-    const ext = video.name.split(".").pop() ?? "mp4";
-    const path = `${id}/video-${Date.now()}.${ext}`;
-    const result = await uploadToBucket("lesson-videos", path, video, video.type || "video/mp4");
-    if ("path" in result) {
-      await admin.from("lessons").update({ video_path: result.path }).eq("id", id);
-    }
+    const ext = video.name.split(".").pop() || "mp4";
+    const buffer = Buffer.from(await video.arrayBuffer());
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+    await packageLessonVideoAsEncryptedHls(id, buffer, ext, siteUrl);
   }
 
   // Action steps: parallel arrays of (possibly empty) ids and bodies from

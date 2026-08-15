@@ -10,7 +10,7 @@ export default async function AdminLessonsPage() {
   const supabase = await createClient();
   const { data: lessons } = await supabase
     .from("lessons")
-    .select("id, day_number, title, is_free, task_type, video_path, sections(title)")
+    .select("id, day_number, title, is_free, task_type, hls_ready, sections(title)")
     .order("day_number", { ascending: true });
 
   return (
@@ -53,7 +53,7 @@ export default async function AdminLessonsPage() {
                     <td className="px-4 py-3 text-muted">{section?.title ?? "—"}</td>
                     <td className="px-4 py-3 text-muted">{l.task_type}</td>
                     <td className="px-4 py-3">
-                      {l.video_path ? (
+                      {l.hls_ready ? (
                         <span className="tag tag-good">nahrané</span>
                       ) : (
                         <span className="tag tag-muted">chýba</span>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
+import type Hls from "hls.js";
 
 const WATCHED_THRESHOLD = 0.95; // count as "watched" once 95% has actually played
 const SEEK_FORWARD_TOLERANCE = 2; // seconds of slack before we snap a forward-seek back
@@ -24,6 +25,38 @@ export function VideoPlayer({
   const lastSavedPercentRef = useRef(Math.floor(initialPercent));
   const [percent, setPercent] = useState(Math.floor(initialPercent));
   const [watched, setWatched] = useState(alreadyWatched);
+
+  // src points at an encrypted HLS playlist (.m3u8) — segments are AES-128
+  // encrypted and served publicly, the decryption key is fetched by the
+  // player from the authenticated /api/video-key/[lessonId] endpoint, so
+  // credentials (the login cookie) must ride along with that request.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !src) return;
+
+    let hls: Hls | null = null;
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      // Safari plays HLS natively, including EXT-X-KEY fetches (same-origin
+      // request, so the session cookie is sent automatically).
+      video.src = src;
+    } else {
+      import("hls.js").then(({ default: HlsCtor }) => {
+        if (!HlsCtor.isSupported() || !videoRef.current) return;
+        hls = new HlsCtor({
+          xhrSetup: (xhr) => {
+            xhr.withCredentials = true;
+          },
+        });
+        hls.loadSource(src);
+        hls.attachMedia(videoRef.current);
+      });
+    }
+
+    return () => {
+      hls?.destroy();
+    };
+  }, [src]);
 
   const saveProgress = useCallback(
     (pct: number, completed: boolean) => {
@@ -73,7 +106,6 @@ export function VideoPlayer({
     <div className="relative">
       <video
         ref={videoRef}
-        src={src}
         controls
         controlsList="nodownload noremoteplayback"
         disablePictureInPicture

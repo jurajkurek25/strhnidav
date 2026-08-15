@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getLessonStatesForUser, statesByDayNumber } from "@/lib/course";
-import { signedUrl, signedDownloadUrl } from "@/lib/media";
+import { signedDownloadUrl } from "@/lib/media";
+import { publicHlsPlaylistUrl } from "@/lib/hls";
 import { Header } from "@/components/Header";
 import { LessonNav } from "@/components/LessonNav";
 import { LockedLessonView } from "@/components/LockedLessonView";
@@ -81,8 +82,9 @@ export default async function LessonPage({
         .order("created_at", { ascending: true }),
     ]);
 
-  const [videoSrc, documentLinks, audioLinks] = await Promise.all([
-    lesson.video_path ? signedUrl("lesson-videos", lesson.video_path) : null,
+  const videoSrc = lesson.hls_ready ? publicHlsPlaylistUrl(lesson.id) : null;
+
+  const [documentLinks, audioLinks] = await Promise.all([
     Promise.all(
       (documents ?? []).map(async (d) => ({
         title: d.title,

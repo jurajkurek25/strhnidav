@@ -73,12 +73,19 @@ export function LessonForm({
 
       <div className="card flex flex-col gap-4 p-6">
         <h2 className="font-display text-lg font-medium">Video</h2>
-        {lesson?.video_path ? (
-          <p className="text-xs text-muted">Video je nahrané. Nahraj nový súbor pre nahradenie.</p>
+        {lesson?.hls_ready ? (
+          <p className="text-xs text-muted">
+            Video je nahrané a zašifrované ({lesson.hls_segment_count ?? "?"} segmentov). Nahraj
+            nový súbor pre nahradenie.
+          </p>
         ) : (
           <p className="text-xs text-muted">Zatiaľ žiadne video.</p>
         )}
         <input type="file" name="video" accept="video/*" />
+        <p className="text-xs text-muted">
+          Po odoslaní formulára appka video rozseká a zašifruje (AES-128 HLS) — pri dlhších
+          videách to môže chvíľu trvať, stránka počká na dokončenie.
+        </p>
       </div>
 
       <div className="card flex flex-col gap-4 p-6">
