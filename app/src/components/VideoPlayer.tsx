@@ -6,6 +6,11 @@ import type Hls from "hls.js";
 const WATCHED_THRESHOLD = 0.95; // count as "watched" once 95% has actually played
 const SEEK_FORWARD_TOLERANCE = 2; // seconds of slack before we snap a forward-seek back
 const CONTROLS_HIDE_DELAY = 2800; // ms of inactivity before controls fade out while playing
+const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+function formatSpeed(rate: number): string {
+  return `${rate % 1 === 0 ? rate : rate.toFixed(2).replace(/0$/, "")}x`;
+}
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -95,6 +100,9 @@ export function VideoPlayer({
   const [fullscreen, setFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [scrubbing, setScrubbing] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
+  const speedMenuRef = useRef<HTMLDivElement>(null);
 
   // src points at an encrypted HLS playlist (.m3u8) — segments are AES-128
   // encrypted and served publicly, the decryption key is fetched by the
@@ -134,6 +142,22 @@ export function VideoPlayer({
     video.volume = volume;
     video.muted = muted;
   }, [volume, muted]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.playbackRate = playbackRate;
+  }, [playbackRate]);
+
+  useEffect(() => {
+    if (!speedMenuOpen) return;
+    function onOutside(e: MouseEvent) {
+      if (speedMenuRef.current && !speedMenuRef.current.contains(e.target as Node)) {
+        setSpeedMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [speedMenuOpen]);
 
   useEffect(() => {
     function onFsChange() {
@@ -384,6 +408,44 @@ export function VideoPlayer({
           </span>
 
           <div className="flex-1" />
+
+          <div ref={speedMenuRef} className="relative">
+            <button
+              type="button"
+              aria-label="Rýchlosť prehrávania"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSpeedMenuOpen((o) => !o);
+              }}
+              className={`rounded-sm px-1.5 py-0.5 font-label text-[12px] tabular-nums tracking-wide transition ${
+                playbackRate !== 1 ? "text-gold-bright" : "text-cream hover:text-gold-bright"
+              }`}
+            >
+              {formatSpeed(playbackRate)}
+            </button>
+            {speedMenuOpen && (
+              <div className="absolute bottom-full right-0 mb-2 w-20 overflow-hidden rounded-sm border border-card-line bg-bg-alt shadow-lg">
+                {SPEED_OPTIONS.map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPlaybackRate(rate);
+                      setSpeedMenuOpen(false);
+                    }}
+                    className={`block w-full px-3 py-1.5 text-left font-label text-[12px] tracking-wide transition ${
+                      rate === playbackRate
+                        ? "bg-gold/15 text-gold-bright"
+                        : "text-cream hover:bg-card"
+                    }`}
+                  >
+                    {formatSpeed(rate)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             <button
