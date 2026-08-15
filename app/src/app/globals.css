@@ -37,179 +37,191 @@
   --font-body: var(--font-body);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* ---------------------------------------------------------------------
+   IMPORTANT: everything below lives inside @layer base / @layer
+   components, not as bare unlayered CSS. Tailwind's own spacing utility
+   classes are generated inside @layer utilities, and per the CSS Cascade
+   Layers spec, unlayered CSS always beats layered CSS regardless of
+   selector specificity. A bare "star { padding 0; margin 0 }" rule here
+   previously silenced every spacing utility class in the app.
+   --------------------------------------------------------------------- */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--gold);
+    color: var(--bg);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 3px;
+  }
+
+  img,
+  svg {
+    display: block;
+  }
+
+  /* disable the native download affordance on any custom video element */
+  video::-internal-media-controls-download-button {
+    display: none;
+  }
+  video::-webkit-media-controls-enclosure {
+    overflow: hidden;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
-}
+@layer components {
+  /* ---------- shared primitives (mirrors landing.html) ---------- */
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
 
-body {
-  background: var(--bg);
-  color: var(--cream);
-  font-family: var(--font-body);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+  .eyebrow {
+    font-family: var(--font-label);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: var(--gold);
+  }
 
-::selection {
-  background: var(--gold);
-  color: var(--bg);
-}
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--gold);
+    color: var(--bg);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 15px 30px;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: var(--gold-bright);
+    transform: translateY(-1px);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--cream);
+    border: 1px solid var(--card-line);
+  }
+  .btn-ghost:hover {
+    background: var(--card);
+    border-color: var(--gold);
+  }
+  .btn-sm {
+    padding: 11px 20px;
+    font-size: 13.5px;
+  }
+  .btn-danger {
+    background: transparent;
+    color: #d98d8d;
+    border: 1px solid rgba(122, 48, 48, 0.5);
+  }
+  .btn-danger:hover {
+    background: rgba(122, 48, 48, 0.15);
+  }
 
-a {
-  color: inherit;
-}
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 4px;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--gold-bright);
-  outline-offset: 3px;
-}
+  .tag {
+    font-family: var(--font-label);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .tag-bad {
+    background: rgba(122, 48, 48, 0.22);
+    color: #d98d8d;
+    border: 1px solid rgba(122, 48, 48, 0.5);
+  }
+  .tag-good {
+    background: rgba(201, 161, 48, 0.14);
+    color: var(--gold-bright);
+    border: 1px solid rgba(201, 161, 48, 0.4);
+  }
+  .tag-muted {
+    background: rgba(143, 135, 121, 0.14);
+    color: var(--muted);
+    border: 1px solid var(--card-line);
+  }
 
-img,
-svg {
-  display: block;
-}
-
-/* ---------- shared primitives (mirrors landing.html) ---------- */
-.wrap {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-}
-
-.eyebrow {
-  font-family: var(--font-label);
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gold);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.eyebrow::before {
-  content: "";
-  width: 28px;
-  height: 1px;
-  background: var(--gold);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--gold);
-  color: var(--bg);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 15px;
-  padding: 15px 30px;
-  border-radius: 2px;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.btn:hover {
-  background: var(--gold-bright);
-  transform: translateY(-1px);
-}
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-.btn-ghost {
-  background: transparent;
-  color: var(--cream);
-  border: 1px solid var(--card-line);
-}
-.btn-ghost:hover {
-  background: var(--card);
-  border-color: var(--gold);
-}
-.btn-sm {
-  padding: 11px 20px;
-  font-size: 13.5px;
-}
-.btn-danger {
-  background: transparent;
-  color: #d98d8d;
-  border: 1px solid rgba(122, 48, 48, 0.5);
-}
-.btn-danger:hover {
-  background: rgba(122, 48, 48, 0.15);
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--card-line);
-  border-radius: 4px;
-}
-
-.tag {
-  font-family: var(--font-label);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 700;
-  padding: 5px 11px;
-  border-radius: 2px;
-  display: inline-block;
-}
-.tag-bad {
-  background: rgba(122, 48, 48, 0.22);
-  color: #d98d8d;
-  border: 1px solid rgba(122, 48, 48, 0.5);
-}
-.tag-good {
-  background: rgba(201, 161, 48, 0.14);
-  color: var(--gold-bright);
-  border: 1px solid rgba(201, 161, 48, 0.4);
-}
-.tag-muted {
-  background: rgba(143, 135, 121, 0.14);
-  color: var(--muted);
-  border: 1px solid var(--card-line);
-}
-
-input[type="email"],
-input[type="text"],
-textarea,
-select {
-  background: var(--bg-alt);
-  border: 1px solid var(--card-line);
-  color: var(--cream);
-  font-family: var(--font-body);
-  font-size: 15px;
-  padding: 14px 18px;
-  border-radius: 2px;
-  width: 100%;
-}
-input::placeholder,
-textarea::placeholder {
-  color: var(--muted);
-}
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--gold);
-  outline: none;
-}
-
-/* disable the native download affordance on any custom video element */
-video::-internal-media-controls-download-button {
-  display: none;
-}
-video::-webkit-media-controls-enclosure {
-  overflow: hidden;
+  input[type="email"],
+  input[type="text"],
+  textarea,
+  select {
+    background: var(--bg-alt);
+    border: 1px solid var(--card-line);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 14px 18px;
+    border-radius: 2px;
+    width: 100%;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted);
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--gold);
+    outline: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
