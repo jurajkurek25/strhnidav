@@ -48,8 +48,8 @@ export function CommentsSection({
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <form onSubmit={post} className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-6">
+      <form onSubmit={post} className="flex flex-col gap-3">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -88,7 +88,7 @@ export function CommentsSection({
                   </button>
                 )}
               </div>
-              <p className="mt-1 text-sm text-muted">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{c.body}</p>
             </div>
           </li>
         ))}

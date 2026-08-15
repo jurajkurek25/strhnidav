@@ -140,13 +140,13 @@ export default async function LessonPage({
           {lesson.title}
         </h1>
         {lesson.description && (
-          <p className="mt-3 max-w-[64ch] text-[15px] leading-relaxed text-muted">
+          <p className="mt-4 max-w-[64ch] text-[15px] leading-relaxed text-muted">
             {lesson.description}
           </p>
         )}
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_320px]">
-          <div className="flex flex-col gap-10">
+        <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_320px]">
+          <div className="flex flex-col gap-12">
             <VideoPlayerSection
               lessonId={lesson.id}
               src={videoSrc}
@@ -155,7 +155,7 @@ export default async function LessonPage({
             />
 
             <section>
-              <h2 className="font-display text-lg font-medium mb-4">Úloha dňa</h2>
+              <h2 className="font-display text-lg font-medium mb-5">Úloha dňa</h2>
               <TaskSubmissionSection
                 lessonId={lesson.id}
                 taskType={lesson.task_type}
@@ -169,15 +169,15 @@ export default async function LessonPage({
             </section>
 
             <section>
-              <h2 className="font-display text-lg font-medium mb-4">Diskusia</h2>
+              <h2 className="font-display text-lg font-medium mb-5">Diskusia</h2>
               <CommentsSection lessonId={lesson.id} initialComments={comments} />
             </section>
           </div>
 
-          <aside className="flex flex-col gap-8">
+          <aside className="flex flex-col gap-9">
             {steps && steps.length > 0 && (
               <div>
-                <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-3">
+                <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-3.5">
                   Akčné kroky
                 </h3>
                 <ActionStepsChecklist
@@ -188,14 +188,14 @@ export default async function LessonPage({
             )}
 
             <div>
-              <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-3">
+              <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-3.5">
                 Dokumenty
               </h3>
               <DownloadList items={documentLinks} />
             </div>
 
             <div>
-              <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-3">
+              <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-3.5">
                 Audio
               </h3>
               <DownloadList items={audioLinks} />
@@ -203,7 +203,7 @@ export default async function LessonPage({
           </aside>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-14">
           <LessonNav prev={prev} next={next} />
         </div>
       </main>

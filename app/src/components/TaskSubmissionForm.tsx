@@ -56,7 +56,7 @@ export function TaskSubmissionForm({
 
   if (isApproved) {
     return (
-      <div className="card p-5">
+      <div className="card p-6">
         <p className="text-sm text-good">Úloha splnená ✓</p>
         {submission?.ai_feedback && (
           <p className="mt-2 text-sm text-muted">{submission.ai_feedback}</p>
@@ -67,8 +67,8 @@ export function TaskSubmissionForm({
 
   if (taskType === "self_check") {
     return (
-      <form onSubmit={submit} className="card p-5">
-        {taskPrompt && <p className="mb-3 text-sm text-muted">{taskPrompt}</p>}
+      <form onSubmit={submit} className="card p-6">
+        {taskPrompt && <p className="mb-4 text-sm leading-relaxed text-muted">{taskPrompt}</p>}
         <button type="submit" className="btn btn-sm" disabled={loading}>
           {loading ? "Ukladám…" : "Označujem, že som úlohu splnil"}
         </button>
@@ -78,8 +78,8 @@ export function TaskSubmissionForm({
   }
 
   return (
-    <form onSubmit={submit} className="card flex flex-col gap-3 p-5">
-      {taskPrompt && <p className="text-sm text-muted">{taskPrompt}</p>}
+    <form onSubmit={submit} className="card flex flex-col gap-4 p-6">
+      {taskPrompt && <p className="text-sm leading-relaxed text-muted">{taskPrompt}</p>}
 
       {submission?.status === "rejected" && (
         <div className="rounded-sm border border-wine/50 bg-wine/10 p-3 text-sm text-[#d98d8d]">

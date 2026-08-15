@@ -27,8 +27,8 @@ export default async function AdminUsersPage() {
         <AdminNav active="/admin/users" />
 
         <section className="mb-12">
-          <h2 className="font-display text-lg font-medium mb-1">Bezplatný prístup podľa emailu</h2>
-          <p className="mb-5 text-sm text-muted max-w-[64ch]">
+          <h2 className="font-display text-lg font-medium mb-2.5">Bezplatný prístup podľa emailu</h2>
+          <p className="mb-6 text-sm text-muted max-w-[64ch] leading-relaxed">
             Pridaj Gmail účet a dostane celý kurz zadarmo — hneď, ak sa už niekedy prihlásil,
             alebo automaticky pri prvom prihlásení cez Google.
           </p>

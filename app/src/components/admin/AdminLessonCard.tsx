@@ -60,7 +60,7 @@ export function AdminLessonCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className="flex flex-1 flex-col gap-3.5 p-6">
         <Link
           href={`/admin/lessons/${lesson.id}`}
           className="font-display text-[16px] font-medium leading-snug text-cream hover:text-gold-bright line-clamp-2"
@@ -68,7 +68,7 @@ export function AdminLessonCard({
           {lesson.title}
         </Link>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           <span className="tag tag-muted">{lesson.sectionTitle ?? "Bez sekcie"}</span>
           <span className="tag tag-muted">{TASK_LABELS[lesson.task_type] ?? lesson.task_type}</span>
           <span className={`tag ${lesson.is_free ? "tag-good" : "tag-bad"}`}>

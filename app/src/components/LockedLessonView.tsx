@@ -12,7 +12,7 @@ export function LockedLessonView({
   dayNumber: number;
 }) {
   return (
-    <div className="card flex flex-col items-center gap-4 px-6 py-16 text-center">
+    <div className="card flex flex-col items-center gap-5 px-6 py-16 text-center">
       <div
         aria-hidden
         className="flex aspect-video w-full max-w-xl flex-1 items-center justify-center rounded-sm"
@@ -30,7 +30,7 @@ export function LockedLessonView({
 
       {state === "locked_paywall" ? (
         <>
-          <p className="max-w-md text-sm text-muted">
+          <p className="max-w-md text-sm leading-relaxed text-muted">
             Prvých 7 lekcií máš zadarmo. Táto lekcia je súčasťou plného kurzu — odomkni si ho
             jednou platbou 199 €.
           </p>
@@ -40,7 +40,7 @@ export function LockedLessonView({
         </>
       ) : (
         <>
-          <p className="max-w-md text-sm text-muted">
+          <p className="max-w-md text-sm leading-relaxed text-muted">
             Táto lekcia sa odomkne, až keď dopozeráš video predchádzajúcej lekcie a splníš jej
             úlohu — a odvtedy prejde jeden deň.
             {unlocksAt && (

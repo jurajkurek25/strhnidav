@@ -25,7 +25,7 @@ export default async function AdminLessonsPage() {
           </Link>
         </div>
         <AdminNav active="/admin/lessons" />
-        <p className="mb-6 -mt-2 text-xs text-muted">
+        <p className="mb-6 text-sm text-muted">
           Potiahni kartu za úchytku vpravo hore, aby si zmenil poradie dní.
         </p>
 

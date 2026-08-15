@@ -77,7 +77,7 @@ export function LessonGridCard({ entry }: { entry: LessonWithState }) {
       }`}
     >
       {thumbnail}
-      <div className="flex flex-1 flex-col gap-2.5 p-5">
+      <div className="flex flex-1 flex-col gap-3 p-6">
         <div className="flex items-center justify-between">
           <span className="font-label text-[13px] tracking-wide text-muted">
             Deň {lesson.day_number}

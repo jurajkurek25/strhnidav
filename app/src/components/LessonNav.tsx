@@ -7,7 +7,7 @@ function NavTile({ entry, direction }: { entry: LessonWithState | null; directio
   const arrow = direction === "prev" ? "←" : "→";
 
   if (!entry) {
-    return <div className="card flex-1 p-4 opacity-40" />;
+    return <div className="card flex-1 p-5 opacity-40" />;
   }
 
   const accessible = entry.state === "unlocked" || entry.state === "completed";
@@ -16,13 +16,13 @@ function NavTile({ entry, direction }: { entry: LessonWithState | null; directio
     return (
       <Link
         href={`/lesson/${entry.lesson.day_number}`}
-        className="card flex flex-1 items-center gap-3 p-4 hover:border-gold"
+        className="card flex flex-1 items-center gap-3.5 p-5 hover:border-gold"
         style={{ flexDirection: direction === "prev" ? "row" : "row-reverse", textAlign: direction === "prev" ? "left" : "right" }}
       >
         <span className="text-gold">{arrow}</span>
         <span className="min-w-0">
           <span className="block text-xs text-muted">{label}</span>
-          <span className="block truncate text-sm text-cream">
+          <span className="mt-1 block truncate text-sm text-cream">
             Deň {entry.lesson.day_number} — {entry.lesson.title}
           </span>
         </span>
@@ -32,13 +32,13 @@ function NavTile({ entry, direction }: { entry: LessonWithState | null; directio
 
   return (
     <div
-      className="card flex flex-1 items-center gap-3 p-4 opacity-60"
+      className="card flex flex-1 items-center gap-3.5 p-5 opacity-60"
       style={{ flexDirection: direction === "prev" ? "row" : "row-reverse", textAlign: direction === "prev" ? "left" : "right" }}
     >
       <LockIcon size={16} />
       <span className="min-w-0">
         <span className="block text-xs text-muted">{label}</span>
-        <span className="block text-sm text-muted">
+        <span className="mt-1 block text-sm text-muted">
           {entry.state === "locked_paywall" ? "Odomkni celý kurz" : "Splň úlohu tejto lekcie"}
         </span>
       </span>

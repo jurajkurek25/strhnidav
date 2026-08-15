@@ -9,7 +9,7 @@ const links = [
 
 export function AdminNav({ active }: { active: string }) {
   return (
-    <nav className="mb-10 flex gap-1 border-b border-card-line">
+    <nav className="mt-6 mb-10 flex gap-1 border-b border-card-line">
       {links.map((l) => (
         <Link
           key={l.href}
