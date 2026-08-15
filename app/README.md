@@ -90,49 +90,57 @@ Otvor `http://localhost:3000`, prihlás sa cez Google — účet
 do `/admin`, kde pridáš sekcie a lekcie (video, dokumenty, audio, úlohu,
 akčné kroky). Ostatní prihlásení používatelia idú do `/dashboard`.
 
-## 7. Nasadenie na vlastný VPS
+## 7. Nasadenie na CloudPanel VPS
 
-Appka je bežný Node.js server (`next start`), takže ide na akýkoľvek VPS
-(Ubuntu/Debian) — žiadny Vercel.
+Appka je bežný Node.js server (`next start`), beží na porte **7777**
+(nastavené v `package.json`'s `start` skripte) — v CloudPanel si pri danej
+stránke (Node.js site) nastav **App Port = 7777**, CloudPanel sa postará o
+Nginx reverse proxy aj Let's Encrypt SSL automaticky.
 
-1. **Predpoklady na serveri**: Node.js 20+, a reverse proxy (Nginx) s HTTPS
-   (Let's Encrypt / certbot) — HTTPS je nutný, Google OAuth aj bezpečné
-   cookies to vyžadujú. `ffmpeg` netreba inštalovať systémovo — appka si ho
+1. **Predpoklady na serveri**: Node.js 20+ (CloudPanel to ponúka pri tvorbe
+   Node.js stránky). `ffmpeg` netreba inštalovať systémovo — appka si ho
    ťahá cez `ffmpeg-static` balíček (funguje na bežných x86_64/arm64
    linuxových VPS; ak by tvoj konkrétny VPS nemal podporovaný binárny
    balíček, treba doinštalovať systémový `ffmpeg` a upraviť
    `src/lib/hls.ts`, aby ho použil namiesto `ffmpeg-static`).
-2. **Nasadenie kódu**:
+
+2. **Nahratie kódu** — repozitár má appku v podpriečinku `app/` (vedľa
+   `landing.html`), takže sa nedá `git clone` priamo do cieľového
+   priečinka. Skontroluj si najprv, či `/home/strhnidav-kurz/htdocs/kurz.strhnidav.sk`
+   je prázdny (`ls -la`) — ak tam CloudPanel nechal nejaké súbory (napr.
+   default `index.html`), radšej si ich zálohuj, než ich prepíšeš.
+
    ```bash
-   git clone <repo> && cd app
+   cd /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk
+
+   git clone --branch claude/membership-course-app-4orr1v \
+     https://github.com/jurajkurek25/strhnidav.git tmp-clone
+
+   cp -a tmp-clone/app/. .
+   rm -rf tmp-clone
+
    npm install
-   cp .env.example .env.local   # vyplň produkčné hodnoty, NEXT_PUBLIC_SITE_URL = https://tvoja-domena
+   cp .env.example .env.local   # vyplň produkčné hodnoty; NEXT_PUBLIC_SITE_URL=https://kurz.strhnidav.sk
    npm run build
    ```
-3. **Beh appky** — cez `systemd` alebo `pm2` (odporúčam `pm2` pre
-   jednoduchosť a automatický reštart):
+
+   Na neskoršiu aktualizáciu (nová verzia appky) spusti presne tú istú
+   sekvenciu znova — `.env.local`, `node_modules` a `.next` sa tým
+   neprepíšu (nie sú v gite), len sa nahradí zdrojový kód a appka sa
+   znova zostaví.
+
+3. **Beh appky** — cez CloudPanel's vlastnú Node.js správu (Site → Node.js
+   → Start Command: `npm run start`) alebo cez `pm2`, ak chceš appku
+   spravovať mimo CloudPanelu:
    ```bash
    npm install -g pm2
    pm2 start "npm run start" --name strhnidav
    pm2 save && pm2 startup
    ```
-4. **Nginx reverse proxy** (príklad, port appky je 3000):
-   ```nginx
-   server {
-       listen 443 ssl;
-       server_name tvoja-domena.sk;
-       location / {
-           proxy_pass http://127.0.0.1:3000;
-           proxy_set_header Host $host;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
-   }
-   ```
-   a `certbot --nginx -d tvoja-domena.sk` na HTTPS certifikát.
-5. V Google Cloud aj Stripe nastav redirect/webhook URL na túto doménu
+4. V Google Cloud aj Stripe nastav redirect/webhook URL na túto doménu
    (rovnaký princíp ako v krokoch 2–3 vyššie, len s produkčnou doménou
    namiesto `localhost`).
-6. Spracovanie videa (ffmpeg) beží priamo v tomto Node procese pri nahratí
+5. Spracovanie videa (ffmpeg) beží priamo v tomto Node procese pri nahratí
    v admin paneli — keďže nejde o serverless funkciu s časovým limitom
    (ako by to bolo na Verceli), dlhé videá nie sú problém, len si to
    poriadne "sadne" na CPU na pár sekúnd/minút podľa dĺžky videa.
