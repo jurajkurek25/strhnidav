@@ -1,13 +1,12 @@
-// Pure URL builders — safe to import from client components (unlike the
-// rest of src/lib/hls.ts, which needs Node/ffmpeg and is marked
-// "server-only"). Only touches NEXT_PUBLIC_* env vars.
+// Pure URL builders — safe to import from client components. Served by
+// src/app/media/[...path]/route.ts (public, no auth check — encrypted HLS
+// segments are useless without their key, and thumbnails are meant to be
+// visible on the dashboard/admin grids regardless of lock state).
 
 export function publicHlsPlaylistUrl(lessonId: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  return `${base}/storage/v1/object/public/lesson-videos-hls/${lessonId}/playlist.m3u8`;
+  return `/media/hls/${lessonId}/playlist.m3u8`;
 }
 
 export function publicThumbnailUrl(lessonId: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  return `${base}/storage/v1/object/public/lesson-thumbnails/${lessonId}/thumbnail.jpg`;
+  return `/media/thumbnails/${lessonId}/thumbnail.jpg`;
 }

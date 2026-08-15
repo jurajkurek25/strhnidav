@@ -1,26 +1,24 @@
+import { desc } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { profiles, freeAccessGrants } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
 import { setUserAccess, addFreeAccessGrant, removeFreeAccessGrant } from "@/app/admin/actions";
 
 export default async function AdminUsersPage() {
   const profile = await requireAdmin();
-  // profiles/free_access_grants have no "admin can see everyone" RLS policy
-  // (by design — see supabase/migrations/0001 and 0004), so this page reads
-  // through the service-role client after requireAdmin() already gated it.
-  const admin = createAdminClient();
 
-  const [{ data: users }, { data: grants }] = await Promise.all([
-    admin.from("profiles").select("*").order("created_at", { ascending: false }),
-    admin.from("free_access_grants").select("*").order("created_at", { ascending: false }),
+  const [users, grants] = await Promise.all([
+    db.select().from(profiles).orderBy(desc(profiles.createdAt)),
+    db.select().from(freeAccessGrants).orderBy(desc(freeAccessGrants.createdAt)),
   ]);
 
-  const registeredEmails = new Set((users ?? []).map((u) => u.email.toLowerCase()));
+  const registeredEmails = new Set(users.map((u) => u.email.toLowerCase()));
 
   return (
     <>
-      <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
+      <Header name={profile.fullName} avatarUrl={profile.avatarUrl} isAdmin hasFullAccess />
       <main className="wrap py-16">
         <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Členovia</h1>
@@ -35,7 +33,7 @@ export default async function AdminUsersPage() {
 
           <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
             <ul className="flex flex-col gap-3.5">
-              {(grants ?? []).map((g) => (
+              {grants.map((g) => (
                 <li key={g.id} className="card flex items-center justify-between gap-6 p-6">
                   <div className="min-w-0">
                     <p className="truncate text-cream">{g.email}</p>
@@ -55,7 +53,7 @@ export default async function AdminUsersPage() {
                   </div>
                 </li>
               ))}
-              {(grants ?? []).length === 0 && (
+              {grants.length === 0 && (
                 <p className="text-sm text-muted">Zatiaľ žiadne bezplatné účty.</p>
               )}
             </ul>
@@ -82,34 +80,34 @@ export default async function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {(users ?? []).map((u) => (
+              {users.map((u) => (
                 <tr key={u.id} className="border-b border-card-line last:border-0">
-                  <td className="px-6 py-4 text-cream">{u.full_name ?? "—"}</td>
+                  <td className="px-6 py-4 text-cream">{u.fullName ?? "—"}</td>
                   <td className="px-6 py-4 text-muted">{u.email}</td>
                   <td className="px-6 py-4 text-muted">
-                    {new Date(u.created_at).toLocaleDateString("sk-SK")}
+                    {u.createdAt.toLocaleDateString("sk-SK")}
                   </td>
                   <td className="px-6 py-4">
-                    {u.is_admin ? (
+                    {u.isAdmin ? (
                       <span className="tag tag-good">admin</span>
-                    ) : u.has_full_access ? (
+                    ) : u.hasFullAccess ? (
                       <span className="tag tag-good">plný kurz</span>
                     ) : (
                       <span className="tag tag-muted">7 lekcií zadarmo</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {!u.is_admin && (
-                      <form action={setUserAccess.bind(null, u.id, !u.has_full_access)}>
+                    {!u.isAdmin && (
+                      <form action={setUserAccess.bind(null, u.id, !u.hasFullAccess)}>
                         <button type="submit" className="btn btn-ghost btn-sm">
-                          {u.has_full_access ? "Zrušiť prístup" : "Udeliť plný prístup"}
+                          {u.hasFullAccess ? "Zrušiť prístup" : "Udeliť plný prístup"}
                         </button>
                       </form>
                     )}
                   </td>
                 </tr>
               ))}
-              {(users ?? []).length === 0 && (
+              {users.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center text-muted">
                     Zatiaľ sa nikto neprihlásil.

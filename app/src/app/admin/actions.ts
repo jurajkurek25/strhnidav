@@ -2,46 +2,50 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { count, eq, inArray } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { uploadToBucket } from "@/lib/media";
+import { db } from "@/lib/db";
+import {
+  sections,
+  lessons,
+  actionSteps,
+  lessonDocuments,
+  lessonAudio,
+  profiles,
+  freeAccessGrants,
+} from "@/lib/db/schema";
+import { uploadPrivateFile } from "@/lib/media";
+import { writeStorageFile, deleteStorageDir, sanitizeFilename } from "@/lib/storage";
 import { packageLessonVideoAsEncryptedHls } from "@/lib/hls";
-import type { TaskType } from "@/types/database";
+import type { TaskType } from "@/lib/db/schema";
 
 // ---------------------------------------------------------------------------
 // sections
 // ---------------------------------------------------------------------------
 export async function createSection(formData: FormData) {
   await requireAdmin();
-  const admin = createAdminClient();
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
   if (!title) return;
 
-  const { count } = await admin.from("sections").select("*", { count: "exact", head: true });
+  const [{ value: sectionCount }] = await db.select({ value: count() }).from(sections);
 
-  await admin.from("sections").insert({
-    title,
-    description,
-    order_index: count ?? 0,
-  });
+  await db.insert(sections).values({ title, description, orderIndex: sectionCount });
 
   revalidatePath("/admin/sections");
 }
 
 export async function deleteSection(id: string) {
   await requireAdmin();
-  const admin = createAdminClient();
-  await admin.from("sections").delete().eq("id", id);
+  await db.delete(sections).where(eq(sections.id, id));
   revalidatePath("/admin/sections");
 }
 
 export async function reorderSections(orderedIds: string[]) {
   await requireAdmin();
-  const admin = createAdminClient();
   await Promise.all(
-    orderedIds.map((id, i) => admin.from("sections").update({ order_index: i }).eq("id", id))
+    orderedIds.map((id, i) => db.update(sections).set({ orderIndex: i }).where(eq(sections.id, id)))
   );
   revalidatePath("/admin/sections");
 }
@@ -51,7 +55,6 @@ export async function reorderSections(orderedIds: string[]) {
 // ---------------------------------------------------------------------------
 export async function saveLesson(formData: FormData) {
   await requireAdmin();
-  const admin = createAdminClient();
 
   const lessonId = String(formData.get("lesson_id") ?? "").trim() || null;
   const dayNumber = Number(formData.get("day_number"));
@@ -67,28 +70,23 @@ export async function saveLesson(formData: FormData) {
   }
 
   const lessonPatch = {
-    day_number: dayNumber,
+    dayNumber,
     title,
     description,
-    section_id: sectionId,
-    task_type: taskType,
-    task_prompt: taskPrompt,
-    is_free: isFree,
-    updated_at: new Date().toISOString(),
+    sectionId,
+    taskType,
+    taskPrompt,
+    isFree,
+    updatedAt: new Date(),
   };
 
   let id = lessonId;
   if (id) {
-    const { error } = await admin.from("lessons").update(lessonPatch).eq("id", id);
-    if (error) throw new Error(error.message);
+    await db.update(lessons).set(lessonPatch).where(eq(lessons.id, id));
   } else {
-    const { data, error } = await admin
-      .from("lessons")
-      .insert(lessonPatch)
-      .select("id")
-      .single();
-    if (error || !data) throw new Error(error?.message ?? "Nepodarilo sa vytvoriť lekciu.");
-    id = data.id;
+    const [created] = await db.insert(lessons).values(lessonPatch).returning({ id: lessons.id });
+    if (!created) throw new Error("Nepodarilo sa vytvoriť lekciu.");
+    id = created.id;
   }
 
   // Optional new video file replaces the existing one — packaged into
@@ -104,19 +102,13 @@ export async function saveLesson(formData: FormData) {
   }
 
   // Optional manual thumbnail — wins over the auto-extracted video frame,
-  // whether uploaded now or later. Stored at a fixed path/content-type-only
-  // distinction (see lib/media-urls.ts's publicThumbnailUrl), so any image format works.
+  // whether uploaded now or later. Public (same as the auto-generated one),
+  // served by src/app/media/[...path]/route.ts.
   const thumbnail = formData.get("thumbnail");
   if (thumbnail instanceof File && thumbnail.size > 0) {
-    const result = await uploadToBucket(
-      "lesson-thumbnails",
-      `${id}/thumbnail.jpg`,
-      thumbnail,
-      thumbnail.type || "image/jpeg"
-    );
-    if ("path" in result) {
-      await admin.from("lessons").update({ thumbnail_ready: true }).eq("id", id);
-    }
+    const buffer = Buffer.from(await thumbnail.arrayBuffer());
+    await writeStorageFile(`public/thumbnails/${id}/thumbnail.jpg`, buffer);
+    await db.update(lessons).set({ thumbnailReady: true }).where(eq(lessons.id, id));
   }
 
   // Action steps: parallel arrays of (possibly empty) ids and bodies from
@@ -125,11 +117,11 @@ export async function saveLesson(formData: FormData) {
   // we never cascade-delete a user's checklist progress on unrelated edits.
   const ids = formData.getAll("action_step_ids[]").map(String);
   const bodies = formData.getAll("action_steps[]").map(String);
-  const { data: existingSteps } = await admin
-    .from("action_steps")
-    .select("id")
-    .eq("lesson_id", id);
-  const existingIds = new Set((existingSteps ?? []).map((s) => s.id));
+  const existingSteps = await db
+    .select({ id: actionSteps.id })
+    .from(actionSteps)
+    .where(eq(actionSteps.lessonId, id));
+  const existingIds = new Set(existingSteps.map((s) => s.id));
   const keptIds = new Set<string>();
 
   let orderIndex = 0;
@@ -138,54 +130,54 @@ export async function saveLesson(formData: FormData) {
     const stepId = ids[i];
     if (stepId && existingIds.has(stepId)) {
       if (body) {
-        await admin.from("action_steps").update({ body, order_index: orderIndex++ }).eq("id", stepId);
+        await db.update(actionSteps).set({ body, orderIndex: orderIndex++ }).where(eq(actionSteps.id, stepId));
         keptIds.add(stepId);
       }
     } else if (body) {
-      await admin.from("action_steps").insert({ lesson_id: id, body, order_index: orderIndex++ });
+      await db.insert(actionSteps).values({ lessonId: id, body, orderIndex: orderIndex++ });
     }
   }
   const toDelete = [...existingIds].filter((existingId) => !keptIds.has(existingId));
   if (toDelete.length > 0) {
-    await admin.from("action_steps").delete().in("id", toDelete);
+    await db.delete(actionSteps).where(inArray(actionSteps.id, toDelete));
   }
 
   // New documents / audio (appended, existing ones are untouched here —
   // removed individually via deleteDocument/deleteAudio).
   const documents = formData.getAll("new_documents").filter((f): f is File => f instanceof File && f.size > 0);
-  const { count: docCount } = await admin
-    .from("lesson_documents")
-    .select("*", { count: "exact", head: true })
-    .eq("lesson_id", id);
+  const [{ value: docCount }] = await db
+    .select({ value: count() })
+    .from(lessonDocuments)
+    .where(eq(lessonDocuments.lessonId, id));
   for (let i = 0; i < documents.length; i++) {
     const file = documents[i];
-    const path = `${id}/${Date.now()}-${file.name}`;
-    const result = await uploadToBucket("lesson-documents", path, file, file.type || "application/octet-stream");
+    const relPath = `${id}/${Date.now()}-${sanitizeFilename(file.name)}`;
+    const result = await uploadPrivateFile("documents", relPath, file);
     if ("path" in result) {
-      await admin.from("lesson_documents").insert({
-        lesson_id: id,
+      await db.insert(lessonDocuments).values({
+        lessonId: id,
         title: file.name,
-        file_path: result.path,
-        order_index: (docCount ?? 0) + i,
+        filePath: result.path,
+        orderIndex: docCount + i,
       });
     }
   }
 
   const audioFiles = formData.getAll("new_audio").filter((f): f is File => f instanceof File && f.size > 0);
-  const { count: audioCount } = await admin
-    .from("lesson_audio")
-    .select("*", { count: "exact", head: true })
-    .eq("lesson_id", id);
+  const [{ value: audioCount }] = await db
+    .select({ value: count() })
+    .from(lessonAudio)
+    .where(eq(lessonAudio.lessonId, id));
   for (let i = 0; i < audioFiles.length; i++) {
     const file = audioFiles[i];
-    const path = `${id}/${Date.now()}-${file.name}`;
-    const result = await uploadToBucket("lesson-audio", path, file, file.type || "audio/mpeg");
+    const relPath = `${id}/${Date.now()}-${sanitizeFilename(file.name)}`;
+    const result = await uploadPrivateFile("audio", relPath, file);
     if ("path" in result) {
-      await admin.from("lesson_audio").insert({
-        lesson_id: id,
+      await db.insert(lessonAudio).values({
+        lessonId: id,
         title: file.name,
-        file_path: result.path,
-        order_index: (audioCount ?? 0) + i,
+        filePath: result.path,
+        orderIndex: audioCount + i,
       });
     }
   }
@@ -197,8 +189,13 @@ export async function saveLesson(formData: FormData) {
 
 export async function deleteLesson(id: string) {
   await requireAdmin();
-  const admin = createAdminClient();
-  await admin.from("lessons").delete().eq("id", id);
+  await db.delete(lessons).where(eq(lessons.id, id));
+  await Promise.all([
+    deleteStorageDir(`public/hls/${id}`),
+    deleteStorageDir(`public/thumbnails/${id}`),
+    deleteStorageDir(`private/documents/${id}`),
+    deleteStorageDir(`private/audio/${id}`),
+  ]);
   revalidatePath("/admin/lessons");
 }
 
@@ -213,12 +210,11 @@ export async function deleteLesson(id: string) {
  */
 export async function reorderLessons(orderedIds: string[]) {
   await requireAdmin();
-  const admin = createAdminClient();
   await Promise.all(
-    orderedIds.map((id, i) => admin.from("lessons").update({ day_number: -(i + 1) }).eq("id", id))
+    orderedIds.map((id, i) => db.update(lessons).set({ dayNumber: -(i + 1) }).where(eq(lessons.id, id)))
   );
   await Promise.all(
-    orderedIds.map((id, i) => admin.from("lessons").update({ day_number: i + 1 }).eq("id", id))
+    orderedIds.map((id, i) => db.update(lessons).set({ dayNumber: i + 1 }).where(eq(lessons.id, id)))
   );
   revalidatePath("/admin/lessons");
   revalidatePath("/dashboard");
@@ -230,32 +226,34 @@ export async function reorderLessons(orderedIds: string[]) {
 // boundary as props, only direct server action references (bound or not) can.
 export async function deleteDocument(lessonId: string, id: string) {
   await requireAdmin();
-  const admin = createAdminClient();
-  await admin.from("lesson_documents").delete().eq("id", id);
+  const [doc] = await db.select().from(lessonDocuments).where(eq(lessonDocuments.id, id));
+  await db.delete(lessonDocuments).where(eq(lessonDocuments.id, id));
+  if (doc) await deleteStorageDir(`private/documents/${doc.filePath}`);
   revalidatePath(`/admin/lessons/${lessonId}`);
 }
 
 export async function reorderDocuments(lessonId: string, orderedIds: string[]) {
   await requireAdmin();
-  const admin = createAdminClient();
   await Promise.all(
-    orderedIds.map((id, i) => admin.from("lesson_documents").update({ order_index: i }).eq("id", id))
+    orderedIds.map((id, i) =>
+      db.update(lessonDocuments).set({ orderIndex: i }).where(eq(lessonDocuments.id, id))
+    )
   );
   revalidatePath(`/admin/lessons/${lessonId}`);
 }
 
 export async function deleteAudio(lessonId: string, id: string) {
   await requireAdmin();
-  const admin = createAdminClient();
-  await admin.from("lesson_audio").delete().eq("id", id);
+  const [track] = await db.select().from(lessonAudio).where(eq(lessonAudio.id, id));
+  await db.delete(lessonAudio).where(eq(lessonAudio.id, id));
+  if (track) await deleteStorageDir(`private/audio/${track.filePath}`);
   revalidatePath(`/admin/lessons/${lessonId}`);
 }
 
 export async function reorderAudio(lessonId: string, orderedIds: string[]) {
   await requireAdmin();
-  const admin = createAdminClient();
   await Promise.all(
-    orderedIds.map((id, i) => admin.from("lesson_audio").update({ order_index: i }).eq("id", id))
+    orderedIds.map((id, i) => db.update(lessonAudio).set({ orderIndex: i }).where(eq(lessonAudio.id, id)))
   );
   revalidatePath(`/admin/lessons/${lessonId}`);
 }
@@ -265,48 +263,42 @@ export async function reorderAudio(lessonId: string, orderedIds: string[]) {
 // ---------------------------------------------------------------------------
 export async function setUserAccess(userId: string, hasFullAccess: boolean) {
   await requireAdmin();
-  const admin = createAdminClient();
-  await admin
-    .from("profiles")
-    .update({
-      has_full_access: hasFullAccess,
-      purchased_at: hasFullAccess ? new Date().toISOString() : null,
-    })
-    .eq("id", userId);
+  await db
+    .update(profiles)
+    .set({ hasFullAccess, purchasedAt: hasFullAccess ? new Date() : null })
+    .where(eq(profiles.id, userId));
   revalidatePath("/admin/users");
 }
 
 // ---------------------------------------------------------------------------
 // free access by email — whitelists a Gmail address for free full-course
 // access. Applied immediately if that person already has a profile, and
-// automatically on first sign-in otherwise (see handle_new_user() in
-// supabase/migrations/0004_free_access_grants.sql).
+// automatically on first sign-in otherwise (see the jwt callback in
+// src/auth.ts).
 // ---------------------------------------------------------------------------
 export async function addFreeAccessGrant(formData: FormData) {
-  const admin_ = await requireAdmin();
-  const admin = createAdminClient();
+  const admin = await requireAdmin();
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const note = String(formData.get("note") ?? "").trim() || null;
   if (!email) return;
 
-  const { error } = await admin
-    .from("free_access_grants")
-    .upsert({ email, note, granted_by: admin_.id }, { onConflict: "email" });
-  if (error) throw new Error(error.message);
+  await db
+    .insert(freeAccessGrants)
+    .values({ email, note, grantedBy: admin.id })
+    .onConflictDoUpdate({ target: freeAccessGrants.email, set: { note, grantedBy: admin.id } });
 
   // Apply immediately if that person already signed up at some point.
-  await admin
-    .from("profiles")
-    .update({ has_full_access: true, purchased_at: new Date().toISOString() })
-    .eq("email", email);
+  await db
+    .update(profiles)
+    .set({ hasFullAccess: true, purchasedAt: new Date() })
+    .where(eq(profiles.email, email));
 
   revalidatePath("/admin/users");
 }
 
 export async function removeFreeAccessGrant(id: string) {
   await requireAdmin();
-  const admin = createAdminClient();
-  await admin.from("free_access_grants").delete().eq("id", id);
+  await db.delete(freeAccessGrants).where(eq(freeAccessGrants.id, id));
   revalidatePath("/admin/users");
 }

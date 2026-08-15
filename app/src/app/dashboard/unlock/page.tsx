@@ -11,15 +11,15 @@ export default async function UnlockPage({
   const profile = await requireProfile();
   const { status } = await searchParams;
 
-  if (profile.has_full_access) redirect("/dashboard");
+  if (profile.hasFullAccess) redirect("/dashboard");
 
   return (
     <>
       <Header
-        name={profile.full_name}
-        avatarUrl={profile.avatar_url}
-        isAdmin={profile.is_admin}
-        hasFullAccess={profile.has_full_access}
+        name={profile.fullName}
+        avatarUrl={profile.avatarUrl}
+        isAdmin={profile.isAdmin}
+        hasFullAccess={profile.hasFullAccess}
       />
       <main className="wrap py-24">
         <div className="eyebrow mb-6">Vstup do kurzu</div>

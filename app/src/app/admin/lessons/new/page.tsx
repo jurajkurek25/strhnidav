@@ -1,26 +1,22 @@
+import { asc, desc } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { sections, lessons } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
 import { LessonForm } from "@/components/admin/LessonForm";
 
 export default async function NewLessonPage() {
   const profile = await requireAdmin();
-  const supabase = await createClient();
 
-  const [{ data: sections }, { data: lastLesson }] = await Promise.all([
-    supabase.from("sections").select("*").order("order_index", { ascending: true }),
-    supabase
-      .from("lessons")
-      .select("day_number")
-      .order("day_number", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  const [allSections, lastLesson] = await Promise.all([
+    db.select().from(sections).orderBy(asc(sections.orderIndex)),
+    db.select({ dayNumber: lessons.dayNumber }).from(lessons).orderBy(desc(lessons.dayNumber)).limit(1),
   ]);
 
   return (
     <>
-      <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
+      <Header name={profile.fullName} avatarUrl={profile.avatarUrl} isAdmin hasFullAccess />
       <main className="wrap py-16 max-w-3xl">
         <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Nová lekcia</h1>
@@ -28,11 +24,11 @@ export default async function NewLessonPage() {
 
         <LessonForm
           lesson={null}
-          sections={sections ?? []}
+          sections={allSections}
           actionSteps={[]}
           documents={[]}
           audio={[]}
-          nextDayNumber={(lastLesson?.day_number ?? 0) + 1}
+          nextDayNumber={(lastLesson[0]?.dayNumber ?? 0) + 1}
         />
       </main>
     </>

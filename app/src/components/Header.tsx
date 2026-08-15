@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { signOutAction } from "@/app/auth/actions";
 
 export function Header({
   name,
@@ -38,7 +39,7 @@ export function Header({
             )}
             <span className="hidden text-sm text-muted sm:inline">{name}</span>
           </div>
-          <form action="/auth/signout" method="post">
+          <form action={signOutAction}>
             <button type="submit" className="btn btn-ghost btn-sm">
               Odhlásiť
             </button>

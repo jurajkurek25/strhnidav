@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { comments, profiles } from "@/lib/db/schema";
 
 const Body = z.object({
   lessonId: z.string().uuid(),
@@ -8,36 +11,32 @@ const Body = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const parsed = Body.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "invalid body" }, { status: 400 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url")
-    .eq("id", user.id)
-    .single();
+  const [profile] = await db
+    .select({ fullName: profiles.fullName, avatarUrl: profiles.avatarUrl })
+    .from(profiles)
+    .where(eq(profiles.id, userId));
 
-  const { data, error } = await supabase
-    .from("comments")
-    .insert({ lesson_id: parsed.data.lessonId, user_id: user.id, body: parsed.data.body })
-    .select("id, body, created_at")
-    .single();
+  const [created] = await db
+    .insert(comments)
+    .values({ lessonId: parsed.data.lessonId, userId, body: parsed.data.body })
+    .returning({ id: comments.id, body: comments.body, createdAt: comments.createdAt });
 
-  if (error || !data) return NextResponse.json({ error: "insert failed" }, { status: 500 });
+  if (!created) return NextResponse.json({ error: "insert failed" }, { status: 500 });
 
   return NextResponse.json({
     comment: {
-      id: data.id,
-      body: data.body,
-      created_at: data.created_at,
-      author_name: profile?.full_name ?? null,
-      author_avatar: profile?.avatar_url ?? null,
+      id: created.id,
+      body: created.body,
+      created_at: created.createdAt.toISOString(),
+      author_name: profile?.fullName ?? null,
+      author_avatar: profile?.avatarUrl ?? null,
       is_own: true,
     },
   });

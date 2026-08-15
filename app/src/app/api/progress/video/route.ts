@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { profiles } from "@/lib/db/schema";
 import { getLessonAccess } from "@/lib/course";
 import { upsertLessonProgress } from "@/lib/progress";
 
@@ -12,27 +14,20 @@ const Body = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const parsed = Body.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "invalid body" }, { status: 400 });
   const { lessonId, percent, completed } = parsed.data;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("has_full_access")
-    .eq("id", user.id)
-    .single();
+  const [profile] = await db.select({ hasFullAccess: profiles.hasFullAccess }).from(profiles).where(eq(profiles.id, userId));
 
-  const { allowed } = await getLessonAccess(supabase, user.id, lessonId, profile?.has_full_access ?? false);
+  const { allowed } = await getLessonAccess(userId, lessonId, profile?.hasFullAccess ?? false);
   if (!allowed) return NextResponse.json({ error: "locked" }, { status: 403 });
 
-  const admin = createAdminClient();
-  await upsertLessonProgress(admin, user.id, lessonId, {
+  await upsertLessonProgress(userId, lessonId, {
     videoWatchedPercent: percent,
     videoCompleted: completed,
   });

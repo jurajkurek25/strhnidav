@@ -1,7 +1,7 @@
-import type { Database } from "@/types/database";
+import type { lessons, userLessonProgress } from "@/lib/db/schema";
 
-type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
-type Progress = Database["public"]["Tables"]["user_lesson_progress"]["Row"];
+type Lesson = typeof lessons.$inferSelect;
+type Progress = typeof userLessonProgress.$inferSelect;
 
 export type LessonState =
   | "completed" // video watched + task approved
@@ -24,7 +24,7 @@ export interface LessonWithState {
  * and every lesson after that still needs its own video+task completion
  * before its own successor's one-day timer even starts.
  */
-function nextDayUnlock(completedAt: string): Date {
+function nextDayUnlock(completedAt: Date): Date {
   const d = new Date(completedAt);
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 1);
@@ -33,22 +33,22 @@ function nextDayUnlock(completedAt: string): Date {
 
 /**
  * Walks the course in day_number order, computing each lesson's state from
- * the previous lesson's progress. `lessons` must already be sorted ascending
- * by day_number and `progressByLessonId` should contain every progress row
- * the caller has for this user.
+ * the previous lesson's progress. `courseLessons` must already be sorted
+ * ascending by dayNumber and `progressByLessonId` should contain every
+ * progress row the caller has for this user.
  */
 export function computeLessonStates(
-  lessons: Lesson[],
+  courseLessons: Lesson[],
   progressByLessonId: Map<string, Progress>,
   hasFullAccess: boolean
 ): LessonWithState[] {
   const result: LessonWithState[] = [];
-  let prevCompletedAt: string | null = null;
+  let prevCompletedAt: Date | null = null;
   let chainBroken = false; // true once we hit a lesson that isn't completed yet
 
-  for (const lesson of lessons) {
+  for (const lesson of courseLessons) {
     const progress = progressByLessonId.get(lesson.id) ?? null;
-    const isCompleted = Boolean(progress?.completed_at);
+    const isCompleted = Boolean(progress?.completedAt);
 
     let state: LessonState;
     let unlocksAt: Date | null = null;
@@ -59,11 +59,11 @@ export function computeLessonStates(
     } else if (chainBroken) {
       state = "locked_time";
     } else {
-      const openAt = nextDayUnlock(prevCompletedAt as string);
+      const openAt = nextDayUnlock(prevCompletedAt as Date);
       if (new Date() < openAt) {
         state = "locked_time";
         unlocksAt = openAt;
-      } else if (!lesson.is_free && !hasFullAccess) {
+      } else if (!lesson.isFree && !hasFullAccess) {
         state = "locked_paywall";
       } else {
         state = isCompleted ? "completed" : "unlocked";
@@ -73,7 +73,7 @@ export function computeLessonStates(
     result.push({ lesson, progress, state, unlocksAt });
 
     if (isCompleted) {
-      prevCompletedAt = progress!.completed_at;
+      prevCompletedAt = progress!.completedAt;
     } else {
       // Whether this lesson is open, paywalled, or time-locked, nothing
       // after it can unlock until *this* one is actually completed.
@@ -88,5 +88,5 @@ export function computeLessonStates(
 export function statesByDayNumber(
   states: LessonWithState[]
 ): Map<number, LessonWithState> {
-  return new Map(states.map((s) => [s.lesson.day_number, s]));
+  return new Map(states.map((s) => [s.lesson.dayNumber, s]));
 }

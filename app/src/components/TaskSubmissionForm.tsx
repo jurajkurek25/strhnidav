@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { TaskType } from "@/types/database";
+import type { TaskType } from "@/lib/db/schema";
 
 interface LatestSubmission {
   status: "pending" | "approved" | "rejected";

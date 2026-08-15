@@ -26,7 +26,7 @@ function PlayIcon() {
 export function LessonGridCard({ entry }: { entry: LessonWithState }) {
   const { lesson, state, unlocksAt } = entry;
   const accessible = state === "unlocked" || state === "completed";
-  const hasThumbnail = lesson.thumbnail_ready;
+  const hasThumbnail = lesson.thumbnailReady;
 
   const badge =
     state === "completed" ? (
@@ -80,7 +80,7 @@ export function LessonGridCard({ entry }: { entry: LessonWithState }) {
       <div className="flex flex-1 flex-col gap-4 p-8">
         <div className="flex items-center justify-between">
           <span className="font-label text-[13px] tracking-wide text-muted">
-            Deň {lesson.day_number}
+            Deň {lesson.dayNumber}
           </span>
           {badge}
         </div>
@@ -93,7 +93,7 @@ export function LessonGridCard({ entry }: { entry: LessonWithState }) {
 
   if (accessible) {
     return (
-      <Link href={`/lesson/${lesson.day_number}`} className="block h-full">
+      <Link href={`/lesson/${lesson.dayNumber}`} className="block h-full">
         {body}
       </Link>
     );

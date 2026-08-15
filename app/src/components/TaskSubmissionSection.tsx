@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { TaskSubmissionForm } from "@/components/TaskSubmissionForm";
-import type { TaskType } from "@/types/database";
+import type { TaskType } from "@/lib/db/schema";
 
 export function TaskSubmissionSection(props: {
   lessonId: string;

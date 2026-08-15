@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { and, eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { actionSteps, profiles, userActionStepCompletions } from "@/lib/db/schema";
 import { getLessonAccess } from "@/lib/course";
 
 const Body = z.object({
@@ -10,51 +12,37 @@ const Body = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const parsed = Body.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "invalid body" }, { status: 400 });
   const { actionStepId, completed } = parsed.data;
 
-  const { data: step } = await supabase
-    .from("action_steps")
-    .select("lesson_id")
-    .eq("id", actionStepId)
-    .single();
+  const [step] = await db
+    .select({ lessonId: actionSteps.lessonId })
+    .from(actionSteps)
+    .where(eq(actionSteps.id, actionStepId));
   if (!step) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("has_full_access")
-    .eq("id", user.id)
-    .single();
+  const [profile] = await db
+    .select({ hasFullAccess: profiles.hasFullAccess })
+    .from(profiles)
+    .where(eq(profiles.id, userId));
 
-  const { allowed } = await getLessonAccess(
-    supabase,
-    user.id,
-    step.lesson_id,
-    profile?.has_full_access ?? false
-  );
+  const { allowed } = await getLessonAccess(userId, step.lessonId, profile?.hasFullAccess ?? false);
   if (!allowed) return NextResponse.json({ error: "locked" }, { status: 403 });
 
-  const admin = createAdminClient();
   if (completed) {
-    await admin
-      .from("user_action_step_completions")
-      .upsert(
-        { user_id: user.id, action_step_id: actionStepId },
-        { onConflict: "user_id,action_step_id" }
-      );
+    await db
+      .insert(userActionStepCompletions)
+      .values({ userId, actionStepId })
+      .onConflictDoNothing({ target: [userActionStepCompletions.userId, userActionStepCompletions.actionStepId] });
   } else {
-    await admin
-      .from("user_action_step_completions")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("action_step_id", actionStepId);
+    await db
+      .delete(userActionStepCompletions)
+      .where(and(eq(userActionStepCompletions.userId, userId), eq(userActionStepCompletions.actionStepId, actionStepId)));
   }
 
   return NextResponse.json({ ok: true });

@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { profiles, lessons, taskSubmissions } from "@/lib/db/schema";
 import { getLessonAccess } from "@/lib/course";
 import { upsertLessonProgress } from "@/lib/progress";
 import { gradeTextSubmission, gradeFileSubmission } from "@/lib/ai-grading";
-import { uploadToBucket } from "@/lib/media";
+import { uploadPrivateFile } from "@/lib/media";
+import { sanitizeFilename } from "@/lib/storage";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const form = await request.formData();
   const lessonId = form.get("lessonId");
@@ -21,55 +22,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("has_full_access")
-    .eq("id", user.id)
-    .single();
+  const [profile] = await db.select({ hasFullAccess: profiles.hasFullAccess }).from(profiles).where(eq(profiles.id, userId));
 
-  const { allowed } = await getLessonAccess(supabase, user.id, lessonId, profile?.has_full_access ?? false);
+  const { allowed } = await getLessonAccess(userId, lessonId, profile?.hasFullAccess ?? false);
   if (!allowed) return NextResponse.json({ error: "locked" }, { status: 403 });
 
-  const { data: lesson } = await supabase
-    .from("lessons")
-    .select("id, title, task_type, task_prompt")
-    .eq("id", lessonId)
-    .single();
+  const [lesson] = await db
+    .select({ id: lessons.id, title: lessons.title, taskType: lessons.taskType, taskPrompt: lessons.taskPrompt })
+    .from(lessons)
+    .where(eq(lessons.id, lessonId));
   if (!lesson) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const admin = createAdminClient();
-
   try {
-    if (lesson.task_type === "self_check") {
-      await admin.from("task_submissions").insert({
-        user_id: user.id,
-        lesson_id: lesson.id,
-        submission_type: "self_check",
+    if (lesson.taskType === "self_check") {
+      await db.insert(taskSubmissions).values({
+        userId,
+        lessonId: lesson.id,
+        submissionType: "self_check",
         status: "approved",
-        reviewed_at: new Date().toISOString(),
+        reviewedAt: new Date(),
       });
-      await upsertLessonProgress(admin, user.id, lesson.id, { taskCompleted: true });
+      await upsertLessonProgress(userId, lesson.id, { taskCompleted: true });
       return NextResponse.json({ status: "approved", ai_feedback: null });
     }
 
-    if (lesson.task_type === "text") {
+    if (lesson.taskType === "text") {
       const text = form.get("text");
       if (typeof text !== "string" || !text.trim()) {
         return NextResponse.json({ error: "Napíš prosím odpoveď." }, { status: 400 });
       }
 
-      const verdict = await gradeTextSubmission(lesson.title, lesson.task_prompt, text.trim());
-      await admin.from("task_submissions").insert({
-        user_id: user.id,
-        lesson_id: lesson.id,
-        submission_type: "text",
-        content_text: text.trim(),
+      const verdict = await gradeTextSubmission(lesson.title, lesson.taskPrompt, text.trim());
+      await db.insert(taskSubmissions).values({
+        userId,
+        lessonId: lesson.id,
+        submissionType: "text",
+        contentText: text.trim(),
         status: verdict.approved ? "approved" : "rejected",
-        ai_feedback: verdict.feedback,
-        reviewed_at: new Date().toISOString(),
+        aiFeedback: verdict.feedback,
+        reviewedAt: new Date(),
       });
       if (verdict.approved) {
-        await upsertLessonProgress(admin, user.id, lesson.id, { taskCompleted: true });
+        await upsertLessonProgress(userId, lesson.id, { taskCompleted: true });
       }
       return NextResponse.json({
         status: verdict.approved ? "approved" : "rejected",
@@ -86,7 +80,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Súbor je príliš veľký (max 8 MB)." }, { status: 400 });
     }
 
-    const expectedMime = lesson.task_type === "image" ? "image/" : "application/pdf";
+    const expectedMime = lesson.taskType === "image" ? "image/" : "application/pdf";
     if (!file.type.startsWith(expectedMime)) {
       return NextResponse.json({ error: "Nesprávny typ súboru." }, { status: 400 });
     }
@@ -96,26 +90,26 @@ export async function POST(request: Request) {
 
     const verdict = await gradeFileSubmission(
       lesson.title,
-      lesson.task_prompt,
+      lesson.taskPrompt,
       base64,
       file.type,
-      lesson.task_type as "image" | "pdf"
+      lesson.taskType as "image" | "pdf"
     );
 
-    const path = `${user.id}/${lesson.id}/${Date.now()}-${file.name}`;
-    const uploaded = await uploadToBucket("task-uploads", path, file, file.type);
+    const relPath = `${userId}/${lesson.id}/${Date.now()}-${sanitizeFilename(file.name)}`;
+    const uploaded = await uploadPrivateFile("task-uploads", relPath, file);
 
-    await admin.from("task_submissions").insert({
-      user_id: user.id,
-      lesson_id: lesson.id,
-      submission_type: lesson.task_type,
-      file_path: "path" in uploaded ? uploaded.path : null,
+    await db.insert(taskSubmissions).values({
+      userId,
+      lessonId: lesson.id,
+      submissionType: lesson.taskType,
+      filePath: "path" in uploaded ? uploaded.path : null,
       status: verdict.approved ? "approved" : "rejected",
-      ai_feedback: verdict.feedback,
-      reviewed_at: new Date().toISOString(),
+      aiFeedback: verdict.feedback,
+      reviewedAt: new Date(),
     });
     if (verdict.approved) {
-      await upsertLessonProgress(admin, user.id, lesson.id, { taskCompleted: true });
+      await upsertLessonProgress(userId, lesson.id, { taskCompleted: true });
     }
 
     return NextResponse.json({

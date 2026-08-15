@@ -15,7 +15,7 @@ function NavTile({ entry, direction }: { entry: LessonWithState | null; directio
   if (accessible) {
     return (
       <Link
-        href={`/lesson/${entry.lesson.day_number}`}
+        href={`/lesson/${entry.lesson.dayNumber}`}
         className="card flex flex-1 items-center gap-5 p-7 hover:border-gold"
         style={{ flexDirection: direction === "prev" ? "row" : "row-reverse", textAlign: direction === "prev" ? "left" : "right" }}
       >
@@ -23,7 +23,7 @@ function NavTile({ entry, direction }: { entry: LessonWithState | null; directio
         <span className="min-w-0">
           <span className="block text-xs text-muted">{label}</span>
           <span className="mt-2 block truncate text-sm text-cream">
-            Deň {entry.lesson.day_number} — {entry.lesson.title}
+            Deň {entry.lesson.dayNumber} — {entry.lesson.title}
           </span>
         </span>
       </Link>

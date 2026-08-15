@@ -8,12 +8,12 @@ import {
 import { ActionStepsEditor } from "@/components/admin/ActionStepsEditor";
 import { SortableFileList } from "@/components/admin/SortableFileList";
 import { publicThumbnailUrl } from "@/lib/media-urls";
-import type { Database } from "@/types/database";
+import type { lessons, sections, lessonDocuments, lessonAudio } from "@/lib/db/schema";
 
-type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
-type Section = Database["public"]["Tables"]["sections"]["Row"];
-type Doc = Database["public"]["Tables"]["lesson_documents"]["Row"];
-type Audio = Database["public"]["Tables"]["lesson_audio"]["Row"];
+type Lesson = typeof lessons.$inferSelect;
+type Section = typeof sections.$inferSelect;
+type Doc = typeof lessonDocuments.$inferSelect;
+type Audio = typeof lessonAudio.$inferSelect;
 
 export function LessonForm({
   lesson,
@@ -41,14 +41,14 @@ export function LessonForm({
             type="number"
             name="day_number"
             min={1}
-            defaultValue={lesson?.day_number ?? nextDayNumber}
+            defaultValue={lesson?.dayNumber ?? nextDayNumber}
             required
           />
         </label>
 
         <label className="flex flex-col gap-2.5 text-sm text-muted">
           Sekcia
-          <select name="section_id" defaultValue={lesson?.section_id ?? ""}>
+          <select name="section_id" defaultValue={lesson?.sectionId ?? ""}>
             <option value="">Bez sekcie</option>
             {sections.map((s) => (
               <option key={s.id} value={s.id}>
@@ -72,7 +72,7 @@ export function LessonForm({
           <input
             type="checkbox"
             name="is_free"
-            defaultChecked={lesson?.is_free ?? false}
+            defaultChecked={lesson?.isFree ?? false}
             className="h-4 w-4"
           />
           Táto lekcia je súčasťou 7 bezplatných lekcií
@@ -81,9 +81,9 @@ export function LessonForm({
 
       <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Video</h2>
-        {lesson?.hls_ready ? (
+        {lesson?.hlsReady ? (
           <p className="text-xs text-muted">
-            Video je nahrané a zašifrované ({lesson.hls_segment_count ?? "?"} segmentov). Nahraj
+            Video je nahrané a zašifrované ({lesson.hlsSegmentCount ?? "?"} segmentov). Nahraj
             nový súbor pre nahradenie.
           </p>
         ) : (
@@ -99,7 +99,7 @@ export function LessonForm({
 
       <div className="card flex flex-col gap-6 p-8">
         <h2 className="font-display text-lg font-medium">Náhľadový obrázok (thumbnail)</h2>
-        {lesson?.thumbnail_ready ? (
+        {lesson?.thumbnailReady ? (
           <div className="flex items-center gap-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -121,7 +121,7 @@ export function LessonForm({
         <h2 className="font-display text-lg font-medium">Úloha dňa</h2>
         <label className="flex flex-col gap-2.5 text-sm text-muted">
           Typ úlohy
-          <select name="task_type" defaultValue={lesson?.task_type ?? "text"}>
+          <select name="task_type" defaultValue={lesson?.taskType ?? "text"}>
             <option value="text">Text — AI vyhodnotí napísanú odpoveď</option>
             <option value="image">Fotka/screenshot — AI vyhodnotí obrázok</option>
             <option value="pdf">Dokument (PDF) — AI vyhodnotí súbor</option>
@@ -130,7 +130,7 @@ export function LessonForm({
         </label>
         <label className="flex flex-col gap-2.5 text-sm text-muted">
           Zadanie úlohy (inštrukcie pre člena aj pre AI)
-          <textarea name="task_prompt" rows={3} defaultValue={lesson?.task_prompt ?? ""} />
+          <textarea name="task_prompt" rows={3} defaultValue={lesson?.taskPrompt ?? ""} />
         </label>
       </div>
 

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { eq } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { profiles, payments } from "@/lib/db/schema";
 
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
@@ -24,26 +26,28 @@ export async function POST(request: Request) {
     const userId = session.client_reference_id ?? session.metadata?.user_id;
 
     if (userId) {
-      const admin = createAdminClient();
-      const now = new Date().toISOString();
+      const now = new Date();
 
-      await admin
-        .from("profiles")
-        .update({ has_full_access: true, purchased_at: now })
-        .eq("id", userId);
+      await db
+        .update(profiles)
+        .set({ hasFullAccess: true, purchasedAt: now })
+        .where(eq(profiles.id, userId));
 
-      await admin.from("payments").upsert(
-        {
-          user_id: userId,
-          stripe_session_id: session.id,
-          stripe_payment_intent:
+      await db
+        .insert(payments)
+        .values({
+          userId,
+          stripeSessionId: session.id,
+          stripePaymentIntent:
             typeof session.payment_intent === "string" ? session.payment_intent : null,
-          amount_cents: session.amount_total ?? 19900,
+          amountCents: session.amount_total ?? 19900,
           currency: session.currency ?? "eur",
           status: "paid",
-        },
-        { onConflict: "stripe_session_id" }
-      );
+        })
+        .onConflictDoUpdate({
+          target: payments.stripeSessionId,
+          set: { status: "paid" },
+        });
     }
   }
 

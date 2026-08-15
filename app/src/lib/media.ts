@@ -1,45 +1,33 @@
 import "server-only";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { writeStorageFile, sanitizeFilename } from "@/lib/storage";
 
-const SIGNED_URL_TTL_SECONDS = 60 * 10; // 10 minutes — short-lived on purpose
-
-export async function signedUrl(
-  bucket: string,
-  path: string,
-  expiresIn: number = SIGNED_URL_TTL_SECONDS
-): Promise<string | null> {
-  const admin = createAdminClient();
-  const { data, error } = await admin.storage
-    .from(bucket)
-    .createSignedUrl(path, expiresIn, { download: false });
-  if (error || !data) return null;
-  return data.signedUrl;
+/** URL for a private document/audio download, gated by src/app/api/files/[bucket]/[...path]/route.ts. */
+export function privateFileUrl(
+  bucket: "documents" | "audio",
+  filePath: string,
+  downloadFilename?: string
+): string {
+  const q = downloadFilename ? `?download=${encodeURIComponent(downloadFilename)}` : "";
+  return `/api/files/${bucket}/${filePath}${q}`;
 }
 
-export async function signedDownloadUrl(
-  bucket: string,
-  path: string,
-  filename: string,
-  expiresIn: number = SIGNED_URL_TTL_SECONDS
-): Promise<string | null> {
-  const admin = createAdminClient();
-  const { data, error } = await admin.storage
-    .from(bucket)
-    .createSignedUrl(path, expiresIn, { download: filename });
-  if (error || !data) return null;
-  return data.signedUrl;
-}
-
-export async function uploadToBucket(
-  bucket: string,
-  path: string,
-  file: Blob,
-  contentType: string
+/**
+ * Writes an uploaded file to local disk under STORAGE_ROOT/private/<bucket>.
+ * `relPath` should already be namespaced by lesson/user id, e.g.
+ * `${lessonId}/${Date.now()}-${sanitizeFilename(file.name)}`.
+ */
+export async function uploadPrivateFile(
+  bucket: "documents" | "audio" | "task-uploads",
+  relPath: string,
+  file: File
 ): Promise<{ path: string } | { error: string }> {
-  const admin = createAdminClient();
-  const { data, error } = await admin.storage
-    .from(bucket)
-    .upload(path, file, { contentType, upsert: true });
-  if (error || !data) return { error: error?.message ?? "Upload zlyhal." };
-  return { path: data.path };
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await writeStorageFile(`private/${bucket}/${relPath}`, buffer);
+    return { path: relPath };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Upload zlyhal." };
+  }
 }
+
+export { sanitizeFilename };

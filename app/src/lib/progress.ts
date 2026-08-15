@@ -1,17 +1,15 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
-
-type Client = SupabaseClient<Database>;
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { userLessonProgress } from "@/lib/db/schema";
 
 /**
  * Merges a partial progress update for (user, lesson) and recomputes
- * `completed_at`. `completed_at` is the single timestamp the whole gating
+ * `completedAt`. `completedAt` is the single timestamp the whole gating
  * chain (lib/gating.ts) hangs off of, so it must only ever be set once both
  * the video and the task are actually done — never earlier.
  */
 export async function upsertLessonProgress(
-  supabase: Client,
   userId: string,
   lessonId: string,
   patch: {
@@ -20,45 +18,38 @@ export async function upsertLessonProgress(
     taskCompleted?: boolean;
   }
 ) {
-  const { data: existing } = await supabase
-    .from("user_lesson_progress")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("lesson_id", lessonId)
-    .maybeSingle();
+  const existing = await db.query.userLessonProgress.findFirst({
+    where: and(eq(userLessonProgress.userId, userId), eq(userLessonProgress.lessonId, lessonId)),
+  });
 
-  const now = new Date().toISOString();
+  const now = new Date();
 
   const videoCompletedAt =
-    patch.videoCompleted && !existing?.video_completed_at
-      ? now
-      : existing?.video_completed_at ?? null;
+    patch.videoCompleted && !existing?.videoCompletedAt ? now : existing?.videoCompletedAt ?? null;
 
   const taskCompletedAt =
-    patch.taskCompleted && !existing?.task_completed_at
-      ? now
-      : existing?.task_completed_at ?? null;
+    patch.taskCompleted && !existing?.taskCompletedAt ? now : existing?.taskCompletedAt ?? null;
 
   const completedAt =
-    existing?.completed_at ?? (videoCompletedAt && taskCompletedAt ? now : null);
+    existing?.completedAt ?? (videoCompletedAt && taskCompletedAt ? now : null);
 
   const row = {
-    user_id: userId,
-    lesson_id: lessonId,
-    video_watched_percent: Math.max(
-      patch.videoWatchedPercent ?? 0,
-      existing?.video_watched_percent ?? 0
-    ),
-    video_completed_at: videoCompletedAt,
-    task_completed_at: taskCompletedAt,
-    completed_at: completedAt,
-    updated_at: now,
+    userId,
+    lessonId,
+    videoWatchedPercent: Math.max(patch.videoWatchedPercent ?? 0, existing?.videoWatchedPercent ?? 0),
+    videoCompletedAt,
+    taskCompletedAt,
+    completedAt,
+    updatedAt: now,
   };
 
-  const { error } = await supabase
-    .from("user_lesson_progress")
-    .upsert(row, { onConflict: "user_id,lesson_id" });
+  await db
+    .insert(userLessonProgress)
+    .values(row)
+    .onConflictDoUpdate({
+      target: [userLessonProgress.userId, userLessonProgress.lessonId],
+      set: row,
+    });
 
-  if (error) throw error;
   return row;
 }

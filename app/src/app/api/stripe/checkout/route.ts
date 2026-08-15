@@ -1,32 +1,31 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { profiles } from "@/lib/db/schema";
 import { stripe, COURSE_PRICE_EUR } from "@/lib/stripe";
 
 export async function POST() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("has_full_access, email")
-    .eq("id", user.id)
-    .single();
+  const [profile] = await db
+    .select({ hasFullAccess: profiles.hasFullAccess, email: profiles.email })
+    .from(profiles)
+    .where(eq(profiles.id, session.user.id));
 
-  if (profile?.has_full_access) {
+  if (profile?.hasFullAccess) {
     return NextResponse.json({ error: "already-purchased" }, { status: 400 });
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
   const priceId = process.env.STRIPE_PRICE_ID;
 
-  const session = await stripe.checkout.sessions.create({
+  const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
-    client_reference_id: user.id,
-    customer_email: profile?.email ?? user.email ?? undefined,
-    metadata: { user_id: user.id },
+    client_reference_id: session.user.id,
+    customer_email: profile?.email ?? session.user.email ?? undefined,
+    metadata: { user_id: session.user.id },
     line_items: [
       priceId
         ? { price: priceId, quantity: 1 }
@@ -46,5 +45,5 @@ export async function POST() {
     cancel_url: `${siteUrl}/dashboard/unlock?status=cancelled`,
   });
 
-  return NextResponse.json({ url: session.url });
+  return NextResponse.json({ url: checkoutSession.url });
 }

@@ -1,5 +1,7 @@
+import { asc, count, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { sections, lessons } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
 import { SortableSections } from "@/components/admin/SortableSections";
@@ -7,15 +9,21 @@ import { createSection } from "@/app/admin/actions";
 
 export default async function AdminSectionsPage() {
   const profile = await requireAdmin();
-  const supabase = await createClient();
-  const { data: sections } = await supabase
-    .from("sections")
-    .select("*, lessons(count)")
-    .order("order_index", { ascending: true });
+  const rows = await db
+    .select({
+      id: sections.id,
+      title: sections.title,
+      description: sections.description,
+      lessonCount: count(lessons.id),
+    })
+    .from(sections)
+    .leftJoin(lessons, eq(lessons.sectionId, sections.id))
+    .groupBy(sections.id)
+    .orderBy(asc(sections.orderIndex));
 
   return (
     <>
-      <Header name={profile.full_name} avatarUrl={profile.avatar_url} isAdmin hasFullAccess />
+      <Header name={profile.fullName} avatarUrl={profile.avatarUrl} isAdmin hasFullAccess />
       <main className="wrap py-16">
         <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Sekcie kurzu</h1>
@@ -23,11 +31,11 @@ export default async function AdminSectionsPage() {
 
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
           <SortableSections
-            initialSections={(sections ?? []).map((s) => ({
+            initialSections={rows.map((s) => ({
               id: s.id,
               title: s.title,
               description: s.description,
-              lessonCount: Array.isArray(s.lessons) ? (s.lessons[0]?.count ?? 0) : 0,
+              lessonCount: s.lessonCount,
             }))}
           />
 

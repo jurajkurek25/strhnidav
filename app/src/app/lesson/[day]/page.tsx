@@ -1,8 +1,18 @@
 import { notFound } from "next/navigation";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import {
+  lessonDocuments,
+  lessonAudio,
+  actionSteps,
+  userActionStepCompletions,
+  taskSubmissions,
+  comments as commentsTable,
+  profiles,
+} from "@/lib/db/schema";
 import { getLessonStatesForUser, statesByDayNumber } from "@/lib/course";
-import { signedDownloadUrl } from "@/lib/media";
+import { privateFileUrl } from "@/lib/media";
 import { publicHlsPlaylistUrl } from "@/lib/media-urls";
 import { Header } from "@/components/Header";
 import { LessonNav } from "@/components/LessonNav";
@@ -23,9 +33,8 @@ export default async function LessonPage({
   if (!Number.isInteger(dayNumber)) notFound();
 
   const profile = await requireProfile();
-  const supabase = await createClient();
 
-  const states = await getLessonStatesForUser(supabase, profile.id, profile.has_full_access);
+  const states = await getLessonStatesForUser(profile.id, profile.hasFullAccess);
   const byDay = statesByDayNumber(states);
   const entry = byDay.get(dayNumber);
   if (!entry) notFound();
@@ -36,10 +45,10 @@ export default async function LessonPage({
 
   const header = (
     <Header
-      name={profile.full_name}
-      avatarUrl={profile.avatar_url}
-      isAdmin={profile.is_admin}
-      hasFullAccess={profile.has_full_access}
+      name={profile.fullName}
+      avatarUrl={profile.avatarUrl}
+      isAdmin={profile.isAdmin}
+      hasFullAccess={profile.hasFullAccess}
     />
   );
 
@@ -59,71 +68,67 @@ export default async function LessonPage({
 
   const { lesson, progress } = entry;
 
-  const [{ data: documents }, { data: audio }, { data: steps }, { data: stepCompletions }, { data: submissions }, { data: rawComments }] =
-    await Promise.all([
-      supabase.from("lesson_documents").select("*").eq("lesson_id", lesson.id).order("order_index"),
-      supabase.from("lesson_audio").select("*").eq("lesson_id", lesson.id).order("order_index"),
-      supabase.from("action_steps").select("*").eq("lesson_id", lesson.id).order("order_index"),
-      supabase
-        .from("user_action_step_completions")
-        .select("action_step_id")
-        .eq("user_id", profile.id),
-      supabase
-        .from("task_submissions")
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("lesson_id", lesson.id)
-        .order("created_at", { ascending: false })
-        .limit(1),
-      supabase
-        .from("comments")
-        .select("id, body, created_at, user_id")
-        .eq("lesson_id", lesson.id)
-        .order("created_at", { ascending: true }),
-    ]);
-
-  // profiles' only SELECT policy is "own row" (see supabase/migrations/0001),
-  // so author names/avatars for OTHER members come from the public view
-  // instead of embedding profiles directly — see 0005_public_member_profiles.sql.
-  const commentAuthorIds = [...new Set((rawComments ?? []).map((c) => c.user_id))];
-  const { data: commentAuthors } =
-    commentAuthorIds.length > 0
-      ? await supabase
-          .from("public_member_profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", commentAuthorIds)
-      : { data: [] };
-  const authorById = new Map((commentAuthors ?? []).map((a) => [a.id, a]));
-
-  const videoSrc = lesson.hls_ready ? publicHlsPlaylistUrl(lesson.id) : null;
-
-  const [documentLinks, audioLinks] = await Promise.all([
-    Promise.all(
-      (documents ?? []).map(async (d) => ({
-        title: d.title,
-        url: (await signedDownloadUrl("lesson-documents", d.file_path, d.title)) ?? "#",
-      }))
-    ),
-    Promise.all(
-      (audio ?? []).map(async (a) => ({
-        title: a.title,
-        url: (await signedDownloadUrl("lesson-audio", a.file_path, a.title)) ?? "#",
-      }))
-    ),
+  const [documents, audio, steps, stepCompletions, submissions, rawComments] = await Promise.all([
+    db.select().from(lessonDocuments).where(eq(lessonDocuments.lessonId, lesson.id)).orderBy(asc(lessonDocuments.orderIndex)),
+    db.select().from(lessonAudio).where(eq(lessonAudio.lessonId, lesson.id)).orderBy(asc(lessonAudio.orderIndex)),
+    db.select().from(actionSteps).where(eq(actionSteps.lessonId, lesson.id)).orderBy(asc(actionSteps.orderIndex)),
+    db
+      .select({ actionStepId: userActionStepCompletions.actionStepId })
+      .from(userActionStepCompletions)
+      .where(eq(userActionStepCompletions.userId, profile.id)),
+    db
+      .select()
+      .from(taskSubmissions)
+      .where(and(eq(taskSubmissions.userId, profile.id), eq(taskSubmissions.lessonId, lesson.id)))
+      .orderBy(desc(taskSubmissions.createdAt))
+      .limit(1),
+    db
+      .select({
+        id: commentsTable.id,
+        body: commentsTable.body,
+        createdAt: commentsTable.createdAt,
+        userId: commentsTable.userId,
+      })
+      .from(commentsTable)
+      .where(eq(commentsTable.lessonId, lesson.id))
+      .orderBy(asc(commentsTable.createdAt)),
   ]);
 
-  const stepIds = new Set((stepCompletions ?? []).map((c) => c.action_step_id));
-  const latestSubmission = submissions?.[0] ?? null;
+  // Author names/avatars for comments — a plain select restricted to the two
+  // public columns (no email, no access-level fields).
+  const commentAuthorIds = [...new Set(rawComments.map((c) => c.userId))];
+  const commentAuthors =
+    commentAuthorIds.length > 0
+      ? await db
+          .select({ id: profiles.id, fullName: profiles.fullName, avatarUrl: profiles.avatarUrl })
+          .from(profiles)
+          .where(inArray(profiles.id, commentAuthorIds))
+      : [];
+  const authorById = new Map(commentAuthors.map((a) => [a.id, a]));
 
-  const comments = (rawComments ?? []).map((c) => {
-    const author = authorById.get(c.user_id);
+  const videoSrc = lesson.hlsReady ? publicHlsPlaylistUrl(lesson.id) : null;
+
+  const documentLinks = documents.map((d) => ({
+    title: d.title,
+    url: privateFileUrl("documents", d.filePath, d.title),
+  }));
+  const audioLinks = audio.map((a) => ({
+    title: a.title,
+    url: privateFileUrl("audio", a.filePath, a.title),
+  }));
+
+  const stepIds = new Set(stepCompletions.map((c) => c.actionStepId));
+  const latestSubmission = submissions[0] ?? null;
+
+  const comments = rawComments.map((c) => {
+    const author = authorById.get(c.userId);
     return {
       id: c.id,
       body: c.body,
-      created_at: c.created_at,
-      author_name: author?.full_name ?? null,
-      author_avatar: author?.avatar_url ?? null,
-      is_own: c.user_id === profile.id,
+      created_at: c.createdAt.toISOString(),
+      author_name: author?.fullName ?? null,
+      author_avatar: author?.avatarUrl ?? null,
+      is_own: c.userId === profile.id,
     };
   });
 
@@ -132,7 +137,7 @@ export default async function LessonPage({
       {header}
       <main className="wrap py-16">
         <div className="mb-8 flex items-center justify-between">
-          <div className="eyebrow">Deň {lesson.day_number} / {states.length}</div>
+          <div className="eyebrow">Deň {lesson.dayNumber} / {states.length}</div>
           {entry.state === "completed" && <span className="tag tag-good">Hotovo</span>}
         </div>
 
@@ -150,19 +155,19 @@ export default async function LessonPage({
             <VideoPlayerSection
               lessonId={lesson.id}
               src={videoSrc}
-              initialPercent={progress?.video_watched_percent ?? 0}
-              alreadyWatched={Boolean(progress?.video_completed_at)}
+              initialPercent={progress?.videoWatchedPercent ?? 0}
+              alreadyWatched={Boolean(progress?.videoCompletedAt)}
             />
 
             <section>
               <h2 className="font-display text-lg font-medium mb-7">Úloha dňa</h2>
               <TaskSubmissionSection
                 lessonId={lesson.id}
-                taskType={lesson.task_type}
-                taskPrompt={lesson.task_prompt}
+                taskType={lesson.taskType}
+                taskPrompt={lesson.taskPrompt}
                 initialSubmission={
                   latestSubmission
-                    ? { status: latestSubmission.status, ai_feedback: latestSubmission.ai_feedback }
+                    ? { status: latestSubmission.status, ai_feedback: latestSubmission.aiFeedback }
                     : null
                 }
               />
@@ -175,7 +180,7 @@ export default async function LessonPage({
           </div>
 
           <aside className="flex flex-col gap-11">
-            {steps && steps.length > 0 && (
+            {steps.length > 0 && (
               <div>
                 <h3 className="font-label text-[13px] uppercase tracking-wide text-muted mb-5">
                   Akčné kroky

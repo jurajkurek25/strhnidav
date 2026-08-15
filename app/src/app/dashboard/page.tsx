@@ -1,28 +1,29 @@
+import { asc } from "drizzle-orm";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { sections } from "@/lib/db/schema";
 import { getLessonStatesForUser } from "@/lib/course";
 import { Header } from "@/components/Header";
 import { LessonGridCard } from "@/components/LessonGridCard";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const supabase = await createClient();
 
-  const [{ data: sections }, states] = await Promise.all([
-    supabase.from("sections").select("*").order("order_index", { ascending: true }),
-    getLessonStatesForUser(supabase, profile.id, profile.has_full_access),
+  const [allSections, states] = await Promise.all([
+    db.select().from(sections).orderBy(asc(sections.orderIndex)),
+    getLessonStatesForUser(profile.id, profile.hasFullAccess),
   ]);
 
-  const sectionById = new Map((sections ?? []).map((s) => [s.id, s]));
+  const sectionById = new Map(allSections.map((s) => [s.id, s]));
   const groups = new Map<string, { title: string; order: number; entries: typeof states }>();
 
   for (const entry of states) {
-    const section = entry.lesson.section_id ? sectionById.get(entry.lesson.section_id) : null;
+    const section = entry.lesson.sectionId ? sectionById.get(entry.lesson.sectionId) : null;
     const key = section?.id ?? "__unassigned";
     if (!groups.has(key)) {
       groups.set(key, {
         title: section?.title ?? "Ďalšie lekcie",
-        order: section?.order_index ?? 9999,
+        order: section?.orderIndex ?? 9999,
         entries: [],
       });
     }
@@ -35,19 +36,19 @@ export default async function DashboardPage() {
   return (
     <>
       <Header
-        name={profile.full_name}
-        avatarUrl={profile.avatar_url}
-        isAdmin={profile.is_admin}
-        hasFullAccess={profile.has_full_access}
+        name={profile.fullName}
+        avatarUrl={profile.avatarUrl}
+        isAdmin={profile.isAdmin}
+        hasFullAccess={profile.hasFullAccess}
       />
       <main className="wrap py-20">
         <div className="eyebrow mb-6">Členská sekcia</div>
         <h1 className="font-display text-[clamp(30px,4vw,44px)] font-semibold leading-tight">
-          Vitaj späť{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}.
+          Vitaj späť{profile.fullName ? `, ${profile.fullName.split(" ")[0]}` : ""}.
         </h1>
         <p className="mt-6 text-[15px] leading-relaxed text-muted">
           Splnené <b className="text-gold-bright">{completedCount}</b> / {states.length} lekcií.
-          {!profile.has_full_access && (
+          {!profile.hasFullAccess && (
             <>
               {" "}
               Prvých 7 lekcií máš zadarmo — potom odomkneš{" "}

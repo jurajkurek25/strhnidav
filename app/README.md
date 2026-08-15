@@ -8,6 +8,13 @@ udeliť konkrétnemu Gmail účtu celý kurz zadarmo (`/admin/users`) a
 drag-and-drop preusporiadania (poradie dní, sekcií, akčných krokov aj
 dokumentov/audia v rámci lekcie).
 
+**Plne self-hosted, žiadne SaaS okrem platobnej brány a AI:** vlastný
+Postgres, vlastné Google prihlásenie (NextAuth/Auth.js — beží priamo v tejto
+appke, nie cez tretiu stranu) a súbory na lokálnom disku servera. Jediné dve
+externé služby, ktoré appka reálne používa, sú Stripe (platobná brána) a
+Anthropic (AI vyhodnocovanie úloh) — obe svojou povahou nejdú nahradiť
+niečím "vlastným" na malom VPS.
+
 ## Ako funguje odomykanie
 
 - Deň 1 je odomknutý hneď po prihlásení.
@@ -26,35 +33,63 @@ dokumentov/audia v rámci lekcie).
 
 - **Next.js 16** (App Router, TypeScript, Tailwind v4), beží ako Node.js
   server na vlastnom VPS (`next build && next start`) — žiadny Vercel.
-- **Supabase** — Auth (Google OAuth), Postgres, Storage buckety
-- **Stripe** — jednorazová platba 199 €
-- **Anthropic Claude API** — vyhodnocovanie textových/obrázkových/PDF úloh
+- **Postgres** priamo cez [Drizzle ORM](https://orm.drizzle.team/) (`pg`
+  driver) — žiadne PostgREST, žiadne RLS; prístupové práva sa kontrolujú v
+  appke (`src/lib/auth.ts`, `src/lib/course.ts`), presne tam, kde by to aj
+  s RLS musela appka overiť ešte raz.
+- **NextAuth / Auth.js v5** — Google OAuth prihlásenie, JWT session (podpísaný
+  cookie, žiadna session tabuľka v DB). Beží úplne vo vnútri tejto appky,
+  žiadna externá auth služba.
+- **Lokálne súborové úložisko** (`STORAGE_ROOT` na disku VPS) namiesto
+  cloud storage bucketov — `src/lib/storage.ts`.
+- **Stripe** — jednorazová platba 199 €.
+- **Anthropic Claude API** — vyhodnocovanie textových/obrázkových/PDF úloh.
 - **ffmpeg** (`ffmpeg-static`, bundlené v `node_modules`) — balenie videa do
-  šifrovaného HLS pri nahratí v admin paneli
+  šifrovaného HLS pri nahratí v admin paneli.
 
-## 1. Supabase projekt
+## 1. Postgres
 
-1. Vytvor projekt na [supabase.com](https://supabase.com).
-2. V **SQL Editor** spusti postupne obsah všetkých súborov v
-   `supabase/migrations/` (`0001` → `0006`, v poradí podľa čísla). Vytvorí
-   to všetky tabuľky, RLS politiky a storage buckety (`lesson-documents`,
-   `lesson-audio`, `task-uploads`, `lock-art` sú privátne;
-   `lesson-videos-hls` je verejný — obsahuje len zašifrované segmenty videa,
-   viď sekcia o ochrane videa nižšie).
-3. **Authentication → Providers → Google**: zapni a vlož Client ID / Secret
-   (viď krok 2 nižšie). Ako **Redirect URL** nastav
-   `https://<tvoj-supabase-projekt>.supabase.co/auth/v1/callback`.
-4. **Settings → API**: skopíruj `Project URL`, `anon public` kľúč a
-   `service_role` kľúč do `.env.local`.
+Appka potrebuje bežiaci Postgres (14+) — buď priamo na VPS, alebo kdekoľvek
+inde, kam appka dovidí.
+
+```bash
+# napr. na Ubuntu/Debian
+sudo apt-get install -y postgresql
+sudo -u postgres createuser strhnidav --pwprompt
+sudo -u postgres createdb strhnidav -O strhnidav
+```
+
+`DATABASE_URL` v `.env` potom bude
+`postgresql://strhnidav:<heslo>@localhost:5432/strhnidav`.
+
+Spusti migráciu (vytvorí všetky tabuľky, žiadne RLS, žiadne storage
+buckety):
+
+```bash
+psql "$DATABASE_URL" -f migrations/0001_init.sql
+```
+
+Ak v budúcnosti pribudne ďalšia migrácia (`migrations/0002_*.sql`...), spusti
+ju rovnako — v poradí podľa čísla.
 
 ## 2. Google OAuth
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → vytvor
-   OAuth 2.0 Client ID (typ **Web application**).
-2. **Authorized redirect URIs**: presne tá istá URL ako v Supabase kroku
-   vyššie (`https://<projekt>.supabase.co/auth/v1/callback`).
-3. Client ID a Secret vlož do Supabase (Authentication → Providers →
-   Google) — nie do `.env` tejto appky, appka ide cez Supabase Auth.
+1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs &
+   Services → Credentials** → vytvor OAuth 2.0 Client ID (typ **Web
+   application**).
+2. **Authorized redirect URIs**: presne
+   `{NEXT_PUBLIC_SITE_URL}/api/auth/callback/google` (napr.
+   `https://kurz.strhnidav.sk/api/auth/callback/google` v produkcii,
+   `http://localhost:3000/api/auth/callback/google` lokálne).
+3. Client ID a Secret daj do `.env` ako `GOOGLE_CLIENT_ID` /
+   `GOOGLE_CLIENT_SECRET`.
+4. Vygeneruj `AUTH_SECRET` (podpisuje/šifruje session cookie):
+   ```bash
+   openssl rand -base64 33
+   ```
+
+Prihlasovanie ide teraz priamo appka → Google, bez medzikroku cez tretiu
+stranu.
 
 ## 3. Stripe
 
@@ -74,8 +109,17 @@ daj ho do `ANTHROPIC_API_KEY`. Used model: `claude-sonnet-5`.
 ## 5. Premenné prostredia
 
 ```bash
-cp .env.example .env.local
-# vyplň všetky hodnoty
+cp .env.example .env
+# vyplň všetky hodnoty — pozor, .env má prednosť pred .env.local nemá zmysel
+# tu udržiavať oba naraz (Next.js .env.local by prepísal .env)
+```
+
+`STORAGE_ROOT` musí byť priečinok, do ktorého appka vie zapisovať (napr.
+`/home/strhnidav-kurz/storage`, mimo `htdocs`, aby nebol priamo prístupný cez
+web server) — vytvor ho vopred:
+
+```bash
+mkdir -p /home/strhnidav-kurz/storage
 ```
 
 ## 6. Lokálny beh
@@ -98,11 +142,11 @@ stránke (Node.js site) nastav **App Port = 7777**, CloudPanel sa postará o
 Nginx reverse proxy aj Let's Encrypt SSL automaticky.
 
 1. **Predpoklady na serveri**: Node.js 20+ (CloudPanel to ponúka pri tvorbe
-   Node.js stránky). `ffmpeg` netreba inštalovať systémovo — appka si ho
-   ťahá cez `ffmpeg-static` balíček (funguje na bežných x86_64/arm64
-   linuxových VPS; ak by tvoj konkrétny VPS nemal podporovaný binárny
-   balíček, treba doinštalovať systémový `ffmpeg` a upraviť
-   `src/lib/hls.ts`, aby ho použil namiesto `ffmpeg-static`).
+   Node.js stránky), Postgres (viď krok 1 vyššie). `ffmpeg` netreba
+   inštalovať systémovo — appka si ho ťahá cez `ffmpeg-static` balíček
+   (funguje na bežných x86_64/arm64 linuxových VPS; ak by tvoj konkrétny VPS
+   nemal podporovaný binárny balíček, treba doinštalovať systémový `ffmpeg`
+   a upraviť `src/lib/hls.ts`, aby ho použil namiesto `ffmpeg-static`).
 
 2. **Nahratie kódu** — repozitár má appku v podpriečinku `app/` (vedľa
    `landing.html`), takže sa nedá `git clone` priamo do cieľového
@@ -110,29 +154,9 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
    je prázdny (`ls -la`) — ak tam CloudPanel nechal nejaké súbory (napr.
    default `index.html`), radšej si ich zálohuj, než ich prepíšeš.
 
-   ```bash
-   cd /home/strhnidav-kurz/htdocs/kurz.strhnidav.sk
-
-   git clone --branch claude/membership-course-app-4orr1v \
-     https://github.com/jurajkurek25/strhnidav.git tmp-clone
-
-   cp -a tmp-clone/app/. .
-   rm -rf tmp-clone
-
-   npm install
-   cp .env.example .env.local   # vyplň produkčné hodnoty; NEXT_PUBLIC_SITE_URL=https://kurz.strhnidav.sk
-   npm run build
-   ```
-
-   Na neskoršiu aktualizáciu (nová verzia appky) spusti presne tú istú
-   sekvenciu znova — `.env.local`, `node_modules` a `.next` sa tým
-   neprepíšu (nie sú v gite), len sa nahradí zdrojový kód a appka sa
-   znova zostaví. **Pozor:** `rm -rf tmp-clone` maže aj `.git` — cieľový
-   priečinok teda nikdy nie je git repozitár a `git pull` v ňom vždy
-   zlyhá s `fatal: not a git repository`. Pre pohodlnejšie aktualizácie
-   nastav radšej trvalý klon nabok (jednorazovo), pozri nižšie.
-
-   **Trvalý klon + update skript (odporúčané pre opakované aktualizácie):**
+   **Trvalý klon nabok + update skript** (nech `git pull` funguje pri
+   ďalších aktualizáciách — priamy klon do `htdocs/...` by nebol skutočný
+   git repozitár, keďže appka je v podpriečinku `app/`):
 
    ```bash
    git clone --branch claude/membership-course-app-4orr1v \
@@ -157,16 +181,17 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
    pm2 restart strhnidav
    ```
 
-   `rm -rf .next` pred buildom nie je nutný pri každej zmene, ale odstraňuje
-   akékoľvek riziko, že Turbopack znova použije zastaranú build cache
-   namiesto prekompilovania zmenených súborov (Tailwind triedy sa generujú
-   práve pri builde).
+   `rm -rf .next` pred buildom odstraňuje akékoľvek riziko, že Turbopack
+   znova použije zastaranú build cache namiesto prekompilovania zmenených
+   súborov (Tailwind triedy sa generujú práve pri builde).
 
    ```bash
    chmod +x /home/strhnidav-kurz/update-strhnidav.sh
    ```
 
-   Odvtedy stačí pri každej novej verzii appky spustiť
+   Prvé spustenie treba doplniť o `.env` (skopíruj `.env.example`, vyplň) a
+   o migráciu (`psql "$DATABASE_URL" -f migrations/0001_init.sql`) — potom
+   už pri každej ďalšej aktualizácii stačí
    `/home/strhnidav-kurz/update-strhnidav.sh`.
 
 3. **Beh appky** — cez CloudPanel's vlastnú Node.js správu (Site → Node.js
@@ -190,13 +215,15 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
 Video sa pri nahratí v admin paneli rozseká a zašifruje (AES-128, HLS
 formát) priamo na tomto serveri cez `ffmpeg` — žiadna externá služba,
 žiadne mesačné poplatky (`src/lib/hls.ts`). Zašifrované segmenty (`.ts`)
-aj playlist (`.m3u8`) sú verejne dostupné (sú bez kľúča nepoužiteľné),
-ale samotný **dešifrovací kľúč** appka vydá len prihlásenému používateľovi,
-ktorý má danú lekciu skutočne odomknutú — cez `/api/video-key/[lessonId]`
+aj playlist (`.m3u8`) sa ukladajú ako verejné statické súbory
+(`STORAGE_ROOT/public/hls/...`, servírované cez `src/app/media/[...path]`,
+bez kontroly prístupu — sú bez kľúča nepoužiteľné), ale samotný
+**dešifrovací kľúč** appka vydá len prihlásenému používateľovi, ktorý má
+danú lekciu skutočne odomknutú — cez `/api/video-key/[lessonId]`
 (`src/app/api/video-key/[lessonId]/route.ts`), s rovnakou kontrolou
 prístupu ako všade inde v appke. Kľúč je v databáze v tabuľke
-`lesson_video_keys`, ktorá nemá žiadnu RLS politiku pre bežných
-používateľov — prečítať ju vie len server (service role kľúč).
+`lesson_video_keys`, ktorú číta iba server (Drizzle, priame pripojenie na
+Postgres) — nikdy nejde na klienta.
 
 Pri tom istom spracovaní appka cez ffmpeg vytiahne aj náhľadový obrázok
 (snímka z videa ~1s), ktorý sa ukazuje na dashboarde aj v admin prehľade
@@ -210,3 +237,20 @@ plného DRM). Zastaví to bežné "klikni pravým tlačidlom a stiahni" aj
 priame sťahovanie súboru cez odkaz. Nezastaví to niekoho, kto sa cielene
 rozhodne video nahrať cez screen recording — to sa nedá zabrániť žiadnym
 spôsobom, ani skutočným DRM (tzv. "analog hole").
+
+## Súborové úložisko
+
+Všetky nahrané/generované súbory sú na lokálnom disku pod `STORAGE_ROOT`
+(`src/lib/storage.ts`), v dvoch priestoroch:
+
+- `public/` — HLS video segmenty/playlist, thumbnaily. Servíruje
+  `src/app/media/[...path]/route.ts` bez kontroly prístupu (bezpečné, lebo
+  video je bez kľúča nepoužiteľné).
+- `private/` — dokumenty, audio, nahraté úlohy. Dokumenty a audio servíruje
+  `src/app/api/files/[bucket]/[...path]/route.ts` až po overení, že
+  používateľ je prihlásený **a** má danú lekciu odomknutú (rovnaká kontrola
+  ako pri videu). Nahraté úlohy (`task-uploads`) sa nikde späť neservírujú,
+  ostávajú len ako záznam.
+
+Pri mazaní lekcie/dokumentu/audia appka zároveň zmaže aj príslušné súbory z
+disku, nech sa `STORAGE_ROOT` časom nezaplní osirotenými súbormi.
