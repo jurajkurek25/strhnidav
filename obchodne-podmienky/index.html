@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obchodné podmienky — Strhni Dav</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Big+Shoulders+Display:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;
+    --bg-alt:#141110;
+    --card:#1b1712;
+    --card-line:rgba(201,161,48,0.16);
+    --gold:#c9a130;
+    --gold-bright:#e8c468;
+    --cream:#ece5d6;
+    --muted:#8f8779;
+    --wine:#7a3030;
+    --font-display:'Fraunces', serif;
+    --font-label:'Big Shoulders Display', sans-serif;
+    --font-body:'Inter', sans-serif;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--cream);
+    font-family:var(--font-body);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--gold);color:var(--bg);}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+
+  header{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(11,10,8,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--card-line);
+  }
+  nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 32px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .logo{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    color:var(--cream);
+    text-decoration:none;
+  }
+  .logo span{color:var(--gold);}
+  .back-link{
+    font-family:var(--font-body);
+    font-size:14px;
+    color:var(--muted);
+    text-decoration:none;
+  }
+  .back-link:hover{color:var(--gold-bright);}
+
+  .page{max-width:760px;margin:0 auto;padding:56px 32px 96px;}
+
+  .eyebrow{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .eyebrow::before{content:"";width:24px;height:1px;background:var(--gold);}
+
+  h1.doc-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(30px,5vw,42px);
+    line-height:1.15;
+    letter-spacing:-0.01em;
+    margin:0 0 28px;
+    text-wrap:balance;
+  }
+
+  .meta-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:3px;
+    padding:22px 26px;
+    margin-bottom:44px;
+    font-size:14.5px;
+    color:var(--muted);
+  }
+  .meta-card strong{color:var(--cream);font-weight:600;}
+  .meta-card .company{
+    font-family:var(--font-display);
+    font-size:18px;
+    color:var(--cream);
+    margin-bottom:6px;
+  }
+  .meta-grid{
+    margin-top:12px;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:4px 14px;
+    font-size:13.5px;
+  }
+  .meta-grid dt{color:var(--muted);}
+  .meta-grid dd{margin:0;color:var(--cream);}
+
+  nav.toc{
+    border-top:1px solid var(--card-line);
+    border-bottom:1px solid var(--card-line);
+    padding:22px 0;
+    margin-bottom:48px;
+    display:block;
+  }
+  nav.toc .toc-label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+  nav.toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:28px;}
+  nav.toc li{break-inside:avoid;margin-bottom:7px;}
+  nav.toc a{font-size:14px;color:var(--cream);text-decoration:none;}
+  nav.toc a:hover{color:var(--gold-bright);text-decoration:underline;}
+  nav.toc .num{color:var(--gold-bright);font-variant-numeric:tabular-nums;margin-right:6px;}
+
+  section.article{margin-bottom:40px;scroll-margin-top:24px;}
+  section.article h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:21px;
+    line-height:1.3;
+    margin:0 0 16px;
+    display:flex;
+    gap:12px;
+    align-items:baseline;
+  }
+  section.article h2 .num{color:var(--gold-bright);font-variant-numeric:tabular-nums;font-size:16px;min-width:1.6em;}
+  section.article p{margin:0 0 14px;color:var(--cream);}
+  section.article p.dim{color:var(--muted);font-size:14.5px;}
+  section.article ul, section.article ol.legal{margin:0 0 14px;padding-left:22px;}
+  section.article ul li, section.article ol.legal li{margin-bottom:7px;}
+  section.article ol.legal{list-style:none;counter-reset:item;padding-left:0;}
+  section.article ol.legal li{counter-increment:item;padding-left:30px;position:relative;}
+  section.article ol.legal li::before{
+    content:counters(item,".") ".";
+    position:absolute;
+    left:0;
+    color:var(--gold-bright);
+    font-variant-numeric:tabular-nums;
+    font-size:14px;
+  }
+
+  .callout{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-left:3px solid var(--gold);
+    border-radius:2px;
+    padding:18px 22px;
+    margin:18px 0;
+    font-size:15px;
+  }
+  .callout p:last-child{margin-bottom:0;}
+  .callout .callout-label{
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--gold-bright);
+    margin-bottom:8px;
+  }
+
+  footer.doc-footer{
+    margin-top:64px;
+    padding-top:28px;
+    border-top:1px solid var(--card-line);
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  footer.site-footer{border-top:1px solid var(--card-line);padding:32px 0;margin-top:40px;}
+  footer.site-footer .wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px 32px;
+    justify-content:space-between;
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  footer.site-footer a{color:var(--muted);text-decoration:underline;}
+  footer.site-footer a:hover{color:var(--gold-bright);}
+
+  @media (max-width:560px){
+    .page{padding:40px 20px 72px;}
+    nav.toc ol{columns:1;}
+    .meta-grid{grid-template-columns:1fr;gap:2px 0;}
+    .meta-grid dt{margin-top:8px;}
+    nav{padding:16px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="https://strhnidav.sk/" class="logo">Strhni<span>Dav</span></a>
+    <a href="https://strhnidav.sk/" class="back-link">← Späť na hlavnú stránku</a>
+  </nav>
+</header>
+
+<div class="page">
+  <div class="eyebrow">Strhni Dav — členská sekcia</div>
+  <h1 class="doc-title">Obchodné podmienky</h1>
+
+  <div class="meta-card">
+    <div class="company">Ngroup, s. r. o.</div>
+    <div class="meta-grid">
+      <dt>Sídlo</dt><dd>Dunajská 8, 811 08 Bratislava, Slovenská republika</dd>
+      <dt>IČO</dt><dd>53 813 189</dd>
+      <dt>E-mail</dt><dd><a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a></dd>
+      <dt>Platné od</dt><dd>15. augusta 2026</dd>
+    </div>
+  </div>
+
+  <nav class="toc" aria-label="Obsah dokumentu">
+    <div class="toc-label">Obsah</div>
+    <ol>
+      <li><a href="#1"><span class="num">1</span>Základné ustanovenia</a></li>
+      <li><a href="#2"><span class="num">2</span>Vymedzenie pojmov</a></li>
+      <li><a href="#3"><span class="num">3</span>Používateľský účet a registrácia</a></li>
+      <li><a href="#4"><span class="num">4</span>Popis a rozsah kurzu</a></li>
+      <li><a href="#5"><span class="num">5</span>Cena a platobné podmienky</a></li>
+      <li><a href="#6"><span class="num">6</span>Odstúpenie od zmluvy</a></li>
+      <li><a href="#7"><span class="num">7</span>Pravidlá používania obsahu</a></li>
+      <li><a href="#8"><span class="num">8</span>Vylúčenie záruky výsledku</a></li>
+      <li><a href="#9"><span class="num">9</span>Duševné vlastníctvo</a></li>
+      <li><a href="#10"><span class="num">10</span>Obmedzenie a ukončenie prístupu</a></li>
+      <li><a href="#11"><span class="num">11</span>Služby tretích strán</a></li>
+      <li><a href="#12"><span class="num">12</span>Reklamácie</a></li>
+      <li><a href="#13"><span class="num">13</span>Riešenie sporov</a></li>
+      <li><a href="#14"><span class="num">14</span>Ochrana osobných údajov</a></li>
+      <li><a href="#15"><span class="num">15</span>Záverečné ustanovenia</a></li>
+    </ol>
+  </nav>
+
+  <section class="article" id="1">
+    <h2><span class="num">1</span>Základné ustanovenia</h2>
+    <p>Tieto obchodné podmienky (ďalej len „<strong>VOP</strong>") upravujú vzájomné práva a povinnosti medzi spoločnosťou <strong>Ngroup, s. r. o.</strong>, so sídlom Dunajská 8, 811 08 Bratislava, IČO: 53 813 189 (ďalej len „<strong>Poskytovateľ</strong>"), a fyzickou osobou, ktorá si vytvorí používateľský účet v členskej sekcii kurzu Strhni Dav a/alebo si zakúpi prístup k jeho plnej verzii (ďalej len „<strong>Používateľ</strong>").</p>
+    <p>VOP sú neoddeliteľnou súčasťou zmluvy uzatvorenej medzi Poskytovateľom a Používateľom. Vytvorením používateľského účtu alebo zaplatením ceny za prístup k plnej verzii kurzu Používateľ potvrdzuje, že sa s VOP oboznámil, rozumie im a súhlasí s nimi.</p>
+  </section>
+
+  <section class="article" id="2">
+    <h2><span class="num">2</span>Vymedzenie pojmov</h2>
+    <ul>
+      <li><strong>Kurz / Strhni Dav</strong> — online vzdelávací program z oblasti osobnostného rozvoja a psychológie osobnosti, dostupný prostredníctvom členskej sekcie na webovej stránke Poskytovateľa.</li>
+      <li><strong>Členská sekcia</strong> — chránená časť webovej stránky, do ktorej má Používateľ prístup po prihlásení sa cez svoj Google účet.</li>
+      <li><strong>Lekcia</strong> — samostatná jednotka Kurzu pozostávajúca spravidla z video obsahu, sprievodných materiálov (dokumenty, audio) a úlohy.</li>
+      <li><strong>Obsah</strong> — všetky video, textové, zvukové a iné materiály sprístupnené Používateľovi v rámci Kurzu.</li>
+      <li><strong>Bezplatná časť</strong> — prvých sedem (7) Lekcií Kurzu, ktoré sú Používateľovi dostupné bez úhrady po vytvorení používateľského účtu.</li>
+      <li><strong>Plná verzia</strong> — všetky Lekcie Kurzu, ktoré presahujú rozsah Bezplatnej časti a sú Používateľovi sprístupnené po zaplatení Ceny.</li>
+      <li><strong>Cena</strong> — jednorazová odplata za sprístupnenie Plnej verzie Kurzu podľa čl. 5.</li>
+    </ul>
+  </section>
+
+  <section class="article" id="3">
+    <h2><span class="num">3</span>Používateľský účet a registrácia</h2>
+    <ol class="legal">
+      <li>Registrácia a prihlásenie do Členskej sekcie prebieha výhradne prostredníctvom prihlásenia cez Google účet Používateľa (Google OAuth). Poskytovateľ neukladá ani nespracúva heslo Používateľa k jeho Google účtu.</li>
+      <li>Používateľ je povinný uvádzať pravdivé údaje a zodpovedá za zabezpečenie prístupu k svojmu Google účtu. Poskytovateľ nezodpovedá za škodu vzniknutú zneužitím účtu tretej osoby v dôsledku porušenia tejto povinnosti.</li>
+      <li>Jeden používateľský účet je určený na použitie jednou fyzickou osobou. Zdieľanie prístupových údajov alebo prístupu k Členskej sekcii s tretími osobami je zakázané.</li>
+      <li>Kurz je určený osobám starším ako 18 rokov. Osoby mladšie ako 18 rokov môžu Kurz využívať iba so súhlasom a pod dohľadom zákonného zástupcu.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="4">
+    <h2><span class="num">4</span>Popis a rozsah kurzu</h2>
+    <ol class="legal">
+      <li>Po vytvorení používateľského účtu sa Používateľovi bez úhrady sprístupní Bezplatná časť (prvých 7 Lekcií).</li>
+      <li>Prístup k ďalším Lekciám nad rámec Bezplatnej časti (Plná verzia) je podmienený zaplatením Ceny podľa čl. 5.</li>
+      <li>Lekcie sa Používateľovi odomykajú postupne, jedna za deň. Nasledujúca Lekcia sa sprístupní najskôr v kalendárny deň nasledujúci po dni, v ktorom Používateľ (a) dopozeral video predchádzajúcej Lekcie v celom rozsahu a zároveň (b) odovzdal alebo označil ako splnenú jej úlohu. Samotné čakanie viacerých dní bez splnenia týchto podmienok neumožňuje odomknúť viac než jednu Lekciu naraz.</li>
+      <li>Poskytovateľ si vyhradzuje právo v primeranom rozsahu upravovať, dopĺňať, aktualizovať alebo meniť poradie, obsah a formu jednotlivých Lekcií, ako aj celkovú štruktúru Kurzu, a to aj po tom, čo si Používateľ zakúpil Plnú verziu, pokiaľ tým podstatne neobmedzí rozsah pôvodne sprístupneného obsahu.</li>
+      <li>Poskytovateľ sa usiluje zabezpečiť nepretržitú dostupnosť Členskej sekcie, negarantuje ju však bez akéhokoľvek prerušenia, najmä v súvislosti s údržbou, aktualizáciami alebo okolnosťami mimo jeho kontroly.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="5">
+    <h2><span class="num">5</span>Cena a platobné podmienky</h2>
+    <ol class="legal">
+      <li>Cena za sprístupnenie Plnej verzie Kurzu je jednorazová platba vo výške <strong>199 €</strong> (slovom: sto deväťdesiatdeväť eur).</li>
+      <li>Cena je konečná. Poskytovateľ nie je platiteľom dane z pridanej hodnoty (DPH), Cena preto DPH neobsahuje.</li>
+      <li>Platba prebieha výhradne prostredníctvom platobnej brány spoločnosti Stripe, Inc. Poskytovateľ nemá prístup k číslu platobnej karty ani iným citlivým platobným údajom Používateľa — tie spracúva priamo prevádzkovateľ platobnej brány v súlade s vlastnými podmienkami a bezpečnostnými štandardmi (PCI DSS).</li>
+      <li>Prístup k Plnej verzii sa Používateľovi sprístupní bezodkladne po úspešnom potvrdení platby.</li>
+      <li>V prípade neúspešnej alebo zrušenej platby zostáva Používateľovi zachovaný prístup k Bezplatnej časti.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="6">
+    <h2><span class="num">6</span>Odstúpenie od zmluvy</h2>
+    <ol class="legal">
+      <li>Ak je Používateľ spotrebiteľom, má v súlade so zákonom č. 102/2014 Z. z. o ochrane spotrebiteľa pri predaji na diaľku právo odstúpiť od zmluvy o zaplatení Ceny bez uvedenia dôvodu v lehote <strong>14 dní</strong> odo dňa jej uzavretia.</li>
+      <li>Toto právo Používateľ uplatní jednoznačným písomným vyhlásením zaslaným na e-mail <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a>. Poskytovateľ v takom prípade vráti Používateľovi prijatú platbu bez zbytočného odkladu, najneskôr do 14 dní od doručenia odstúpenia, rovnakým spôsobom, akým bola platba prijatá.</li>
+      <li>V súlade s § 7 ods. 6 písm. l) zákona č. 102/2014 Z. z. Používateľ berie na vedomie, že právo na odstúpenie od zmluvy stráca vo vzťahu k tej časti Plnej verzie Kurzu (jednotlivým Lekciám), ktorú si aktívne pozrel alebo si k nej stiahol sprievodné materiály pred uplynutím lehoty na odstúpenie, ak si sprístupnenie tohto obsahu pred uplynutím lehoty na odstúpenie výslovne vyžiadal.</li>
+      <li>Toto výslovné vyžiadanie a súhlas so stratou práva na odstúpenie Používateľ udeľuje zaškrtnutím potvrdzovacieho políčka priamo v platobnom procese pred presmerovaním na platobnú bránu Stripe; bez tohto potvrdenia nie je možné platbu spustiť. Okamih udelenia súhlasu sa eviduje spolu so záznamom o platbe.</li>
+      <li>Právo na odstúpenie od zmluvy sa nevzťahuje na vytvorenie používateľského účtu a prístup k Bezplatnej časti, keďže za tento prístup sa neplatí žiadna Cena.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="7">
+    <h2><span class="num">7</span>Pravidlá používania obsahu</h2>
+    <ol class="legal">
+      <li>Video obsah Lekcií je technicky chránený proti neoprávnenému sťahovaniu a je určený výhradne na prehrávanie v rámci Členskej sekcie. Používateľ sa zaväzuje neobchádzať tieto technické opatrenia, nezaznamenávať, nekopírovať ani inak nezískavať Obsah mimo Členskej sekcie a nezdieľať ho s tretími osobami.</li>
+      <li>Súčasťou niektorých Lekcií je úloha, ktorú Používateľ odovzdáva formou textu, obrázka alebo dokumentu (PDF). Vyhodnotenie tejto úlohy môže prebiehať automatizovane pomocou umelej inteligencie tretej strany (bližšie v čl. 11). Poskytovateľ nezodpovedá za prípadnú nepresnosť takéhoto automatizovaného vyhodnotenia; pri type úlohy bez automatického vyhodnotenia potvrdzuje splnenie úlohy samotný Používateľ.</li>
+      <li>Súčasťou Členskej sekcie je diskusné fórum (komentáre) pod jednotlivými Lekciami. V rámci diskusie sa ostatným prihláseným Používateľom zobrazuje meno a profilová fotografia z Google účtu autora príspevku.</li>
+      <li>V diskusii je zakázané zverejňovať obsah, ktorý je urážlivý, diskriminačný, spamový, propagačný bez súhlasu Poskytovateľa alebo inak porušujúci všeobecne záväzné právne predpisy či dobré mravy. Poskytovateľ je oprávnený takýto obsah bez upozornenia odstrániť.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="8">
+    <h2><span class="num">8</span>Vylúčenie záruky výsledku</h2>
+    <div class="callout">
+      <div class="callout-label">Dôležité upozornenie</div>
+      <p>Obsah Kurzu má výhradne <strong>vzdelávací a informačný charakter</strong> v oblasti osobnostného rozvoja a psychológie osobnosti. Poskytovateľ negarantuje ani nezaručuje dosiahnutie akéhokoľvek konkrétneho výsledku — vrátane zmeny správania, zlepšenia osobných či partnerských vzťahov, sebavedomia, kariérneho, finančného alebo iného úspechu — na základe absolvovania Kurzu.</p>
+    </div>
+    <ol class="legal">
+      <li>Výsledky, ktoré Používateľ prípadne dosiahne, závisia od mnohých individuálnych faktorov mimo kontroly Poskytovateľa, najmä od osobného nasadenia, miery a spôsobu aplikácie získaných poznatkov v praxi, životnej situácie, motivácie a schopností Používateľa.</li>
+      <li>Kurz nenahrádza odbornú psychologickú, psychoterapeutickú, psychiatrickú, zdravotnú, právnu ani inú odbornú starostlivosť. V prípade akútnych ťažkostí duševného zdravia Poskytovateľ odporúča bezodkladne vyhľadať kvalifikovaného odborníka alebo linku krízovej pomoci.</li>
+      <li>Poskytovateľ nezodpovedá za škodu, ušlý zisk ani inú majetkovú či nemajetkovú ujmu, ktorá Používateľovi vznikne v súvislosti s používaním Kurzu alebo aplikáciou v ňom obsiahnutých informácií v praktickom živote, s výnimkou prípadov, keď takúto zodpovednosť nemožno podľa platných právnych predpisov obmedziť alebo vylúčiť.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="9">
+    <h2><span class="num">9</span>Duševné vlastníctvo</h2>
+    <ol class="legal">
+      <li>Všetok Obsah Kurzu — najmä video záznamy, texty, grafické spracovanie, zvukové nahrávky a štruktúra Kurzu — je predmetom autorského práva a je vo vlastníctve Poskytovateľa alebo je Poskytovateľom používaný na základe platnej licencie.</li>
+      <li>Zaplatením Ceny (resp. vytvorením účtu v prípade Bezplatnej časti) sa Používateľovi udeľuje nevýhradná, neprenosná licencia na osobné, nekomerčné použitie Obsahu, a to výlučne prostredníctvom Členskej sekcie a po dobu trvania jeho prístupu.</li>
+      <li>Akékoľvek kopírovanie, rozmnožovanie, verejné šírenie, sprístupňovanie tretím osobám, úprava alebo ďalší predaj Obsahu bez predchádzajúceho písomného súhlasu Poskytovateľa je zakázané.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="10">
+    <h2><span class="num">10</span>Obmedzenie a ukončenie prístupu</h2>
+    <ol class="legal">
+      <li>Poskytovateľ je oprávnený dočasne obmedziť alebo úplne zrušiť prístup Používateľa k Členskej sekcii v prípade preukázateľného porušenia týchto VOP, najmä pravidiel podľa čl. 7 a 9.</li>
+      <li>V prípade zrušenia prístupu z dôvodu preukázaného porušenia VOP zo strany Používateľa nevzniká Používateľovi nárok na vrátenie Ceny ani jej pomernej časti.</li>
+      <li>Používateľ môže kedykoľvek požiadať o zrušenie svojho používateľského účtu zaslaním žiadosti na e-mail Poskytovateľa.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="11">
+    <h2><span class="num">11</span>Služby tretích strán</h2>
+    <p>Pri poskytovaní Kurzu Poskytovateľ využíva nasledujúce služby tretích strán, ktoré sa spravujú vlastnými podmienkami týchto poskytovateľov:</p>
+    <ul>
+      <li><strong>Google</strong> — prihlásenie do Členskej sekcie (Google OAuth).</li>
+      <li><strong>Stripe</strong> — spracovanie platby Ceny.</li>
+      <li><strong>Anthropic</strong> — automatizované vyhodnocovanie textových, obrazových a dokumentových úloh pomocou umelej inteligencie.</li>
+    </ul>
+    <p class="dim">Podrobnosti o spracúvaní osobných údajov v súvislosti s týmito službami sú uvedené v <a href="https://strhnidav.sk/gdpr">Zásadách ochrany osobných údajov</a>.</p>
+  </section>
+
+  <section class="article" id="12">
+    <h2><span class="num">12</span>Reklamácie</h2>
+    <ol class="legal">
+      <li>Používateľ môže uplatniť reklamáciu týkajúcu sa funkčnosti Členskej sekcie alebo zaplatenej Ceny písomne na e-mail <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a>, s uvedením popisu vady a požadovaného spôsobu vybavenia.</li>
+      <li>Poskytovateľ potvrdí prijatie reklamácie a vybaví ju najneskôr do 30 dní odo dňa jej uplatnenia, pokiaľ sa s Používateľom nedohodne na dlhšej lehote.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="13">
+    <h2><span class="num">13</span>Riešenie sporov</h2>
+    <p>Ak Používateľ ako spotrebiteľ nie je spokojný so spôsobom, akým Poskytovateľ vybavil jeho reklamáciu alebo sťažnosť, alebo ak sa domnieva, že Poskytovateľ porušil jeho práva, má právo obrátiť sa na Poskytovateľa so žiadosťou o nápravu. Ak Poskytovateľ na žiadosť odpovie zamietavo alebo na ňu neodpovie do 30 dní, Používateľ má právo podať návrh na začatie alternatívneho riešenia sporu subjektu alternatívneho riešenia sporov, ktorým je najmä <strong>Slovenská obchodná inšpekcia</strong> (Bajkalská 21/A, 827 99 Bratislava, <a href="https://www.soi.sk">www.soi.sk</a>), alebo prostredníctvom platformy Európskej únie pre riešenie sporov online na <a href="https://ec.europa.eu/consumers/odr">ec.europa.eu/consumers/odr</a>.</p>
+  </section>
+
+  <section class="article" id="14">
+    <h2><span class="num">14</span>Ochrana osobných údajov</h2>
+    <p>Spracúvanie osobných údajov Používateľa sa riadi samostatným dokumentom <a href="https://strhnidav.sk/gdpr">Zásady ochrany osobných údajov</a>, ktorý je neoddeliteľnou súčasťou vzťahu medzi Poskytovateľom a Používateľom.</p>
+  </section>
+
+  <section class="article" id="15">
+    <h2><span class="num">15</span>Záverečné ustanovenia</h2>
+    <ol class="legal">
+      <li>Tieto VOP sa riadia právnym poriadkom Slovenskej republiky. Vzťahy nimi neupravené sa spravujú najmä zákonom č. 40/1964 Zb. (Občiansky zákonník), zákonom č. 102/2014 Z. z. a zákonom č. 250/2007 Z. z. o ochrane spotrebiteľa v ich platnom znení.</li>
+      <li>Poskytovateľ si vyhradzuje právo tieto VOP z času na čas meniť. Zmena sa nedotýka práv a povinností vzniknutých pred jej účinnosťou. Aktuálne znenie VOP je vždy dostupné na tejto stránke.</li>
+      <li>Ak sa niektoré ustanovenie týchto VOP ukáže ako neplatné alebo neúčinné, nemá to vplyv na platnosť a účinnosť ostatných ustanovení.</li>
+    </ol>
+  </section>
+
+  <footer class="doc-footer">
+    <p><strong>Ngroup, s. r. o.</strong> · Dunajská 8, 811 08 Bratislava, Slovenská republika · IČO 53 813 189<br>Kontakt vo veciach Kurzu a týchto VOP: <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a></p>
+  </footer>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>Strhni Dav — pripravovaný online kurz</div>
+    <div><a href="https://strhnidav.sk/gdpr">Ochrana osobných údajov</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

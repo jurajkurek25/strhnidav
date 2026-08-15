@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zásady ochrany osobných údajov — Strhni Dav</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Big+Shoulders+Display:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;
+    --bg-alt:#141110;
+    --card:#1b1712;
+    --card-line:rgba(201,161,48,0.16);
+    --gold:#c9a130;
+    --gold-bright:#e8c468;
+    --cream:#ece5d6;
+    --muted:#8f8779;
+    --wine:#7a3030;
+    --font-display:'Fraunces', serif;
+    --font-label:'Big Shoulders Display', sans-serif;
+    --font-body:'Inter', sans-serif;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--cream);
+    font-family:var(--font-body);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--gold);color:var(--bg);}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+
+  header{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(11,10,8,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--card-line);
+  }
+  nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 32px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .logo{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    color:var(--cream);
+    text-decoration:none;
+  }
+  .logo span{color:var(--gold);}
+  .back-link{
+    font-family:var(--font-body);
+    font-size:14px;
+    color:var(--muted);
+    text-decoration:none;
+  }
+  .back-link:hover{color:var(--gold-bright);}
+
+  .page{max-width:760px;margin:0 auto;padding:56px 32px 96px;}
+
+  .eyebrow{
+    font-family:var(--font-label);
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .eyebrow::before{content:"";width:24px;height:1px;background:var(--gold);}
+
+  h1.doc-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(30px,5vw,42px);
+    line-height:1.15;
+    letter-spacing:-0.01em;
+    margin:0 0 28px;
+    text-wrap:balance;
+  }
+
+  .meta-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:3px;
+    padding:22px 26px;
+    margin-bottom:44px;
+    font-size:14.5px;
+    color:var(--muted);
+  }
+  .meta-card strong{color:var(--cream);font-weight:600;}
+  .meta-card .company{
+    font-family:var(--font-display);
+    font-size:18px;
+    color:var(--cream);
+    margin-bottom:6px;
+  }
+  .meta-grid{
+    margin-top:12px;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:4px 14px;
+    font-size:13.5px;
+  }
+  .meta-grid dt{color:var(--muted);}
+  .meta-grid dd{margin:0;color:var(--cream);}
+
+  nav.toc{
+    border-top:1px solid var(--card-line);
+    border-bottom:1px solid var(--card-line);
+    padding:22px 0;
+    margin-bottom:48px;
+    display:block;
+  }
+  nav.toc .toc-label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+  nav.toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:28px;}
+  nav.toc li{break-inside:avoid;margin-bottom:7px;}
+  nav.toc a{font-size:14px;color:var(--cream);text-decoration:none;}
+  nav.toc a:hover{color:var(--gold-bright);text-decoration:underline;}
+  nav.toc .num{color:var(--gold-bright);font-variant-numeric:tabular-nums;margin-right:6px;}
+
+  section.article{margin-bottom:40px;scroll-margin-top:24px;}
+  section.article h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:21px;
+    line-height:1.3;
+    margin:0 0 16px;
+    display:flex;
+    gap:12px;
+    align-items:baseline;
+  }
+  section.article h2 .num{color:var(--gold-bright);font-variant-numeric:tabular-nums;font-size:16px;min-width:1.6em;}
+  section.article p{margin:0 0 14px;color:var(--cream);}
+  section.article p.dim{color:var(--muted);font-size:14.5px;}
+  section.article ul, section.article ol.legal{margin:0 0 14px;padding-left:22px;}
+  section.article ul li, section.article ol.legal li{margin-bottom:7px;}
+  section.article ol.legal{list-style:none;counter-reset:item;padding-left:0;}
+  section.article ol.legal li{counter-increment:item;padding-left:30px;position:relative;}
+  section.article ol.legal li::before{
+    content:counters(item,".") ".";
+    position:absolute;
+    left:0;
+    color:var(--gold-bright);
+    font-variant-numeric:tabular-nums;
+    font-size:14px;
+  }
+
+  table.data-table{width:100%;border-collapse:collapse;margin:4px 0 20px;font-size:14px;}
+  table.data-table th, table.data-table td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--card-line);
+    vertical-align:top;
+  }
+  table.data-table th{
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .table-scroll{overflow-x:auto;}
+
+  .callout{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-left:3px solid var(--gold);
+    border-radius:2px;
+    padding:18px 22px;
+    margin:18px 0;
+    font-size:15px;
+  }
+  .callout p:last-child{margin-bottom:0;}
+  .callout .callout-label{
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--gold-bright);
+    margin-bottom:8px;
+  }
+
+  footer.doc-footer{
+    margin-top:64px;
+    padding-top:28px;
+    border-top:1px solid var(--card-line);
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  footer.site-footer{border-top:1px solid var(--card-line);padding:32px 0;margin-top:40px;}
+  footer.site-footer .wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px 32px;
+    justify-content:space-between;
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  footer.site-footer a{color:var(--muted);text-decoration:underline;}
+  footer.site-footer a:hover{color:var(--gold-bright);}
+
+  @media (max-width:560px){
+    .page{padding:40px 20px 72px;}
+    nav.toc ol{columns:1;}
+    .meta-grid{grid-template-columns:1fr;gap:2px 0;}
+    .meta-grid dt{margin-top:8px;}
+    table.data-table{font-size:13px;}
+    nav{padding:16px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="https://strhnidav.sk/" class="logo">Strhni<span>Dav</span></a>
+    <a href="https://strhnidav.sk/" class="back-link">← Späť na hlavnú stránku</a>
+  </nav>
+</header>
+
+<div class="page">
+  <div class="eyebrow">Strhni Dav — členská sekcia</div>
+  <h1 class="doc-title">Zásady ochrany osobných údajov</h1>
+
+  <div class="meta-card">
+    <div class="company">Ngroup, s. r. o.</div>
+    <div class="meta-grid">
+      <dt>Sídlo</dt><dd>Dunajská 8, 811 08 Bratislava, Slovenská republika</dd>
+      <dt>IČO</dt><dd>53 813 189</dd>
+      <dt>E-mail</dt><dd><a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a></dd>
+      <dt>Platné od</dt><dd>15. augusta 2026</dd>
+    </div>
+  </div>
+
+  <nav class="toc" aria-label="Obsah dokumentu">
+    <div class="toc-label">Obsah</div>
+    <ol>
+      <li><a href="#1"><span class="num">1</span>Prevádzkovateľ</a></li>
+      <li><a href="#2"><span class="num">2</span>Rozsah tohto dokumentu</a></li>
+      <li><a href="#3"><span class="num">3</span>Aké údaje spracúvame</a></li>
+      <li><a href="#4"><span class="num">4</span>Účely a právne základy</a></li>
+      <li><a href="#5"><span class="num">5</span>Príjemcovia a sprostredkovatelia</a></li>
+      <li><a href="#6"><span class="num">6</span>Prenos do tretích krajín</a></li>
+      <li><a href="#7"><span class="num">7</span>Doba uchovávania</a></li>
+      <li><a href="#8"><span class="num">8</span>Automatizované vyhodnocovanie úloh</a></li>
+      <li><a href="#9"><span class="num">9</span>Práva dotknutej osoby</a></li>
+      <li><a href="#10"><span class="num">10</span>Cookies</a></li>
+      <li><a href="#11"><span class="num">11</span>Zabezpečenie údajov</a></li>
+      <li><a href="#12"><span class="num">12</span>Deti a maloletí</a></li>
+      <li><a href="#13"><span class="num">13</span>Zmeny a kontakt</a></li>
+    </ol>
+  </nav>
+
+  <section class="article" id="1">
+    <h2><span class="num">1</span>Prevádzkovateľ</h2>
+    <p>Prevádzkovateľom osobných údajov v zmysle Nariadenia Európskeho parlamentu a Rady (EÚ) 2016/679 (ďalej len „<strong>GDPR</strong>") a zákona č. 18/2018 Z. z. o ochrane osobných údajov je spoločnosť <strong>Ngroup, s. r. o.</strong>, so sídlom Dunajská 8, 811 08 Bratislava, Slovenská republika, IČO: 53 813 189 (ďalej len „<strong>my</strong>" alebo „<strong>Prevádzkovateľ</strong>").</p>
+    <p>Vo veciach ochrany osobných údajov nás môžete kontaktovať na e-mailovej adrese <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a>.</p>
+  </section>
+
+  <section class="article" id="2">
+    <h2><span class="num">2</span>Rozsah tohto dokumentu</h2>
+    <p>Tieto Zásady ochrany osobných údajov (ďalej len „<strong>Zásady</strong>") popisujú, aké osobné údaje spracúvame o používateľoch členskej sekcie kurzu Strhni Dav (ďalej len „<strong>Používateľ</strong>" alebo „<strong>vy</strong>"), na aké účely, na akom právnom základe, komu ich sprístupňujeme a aké práva vám ako dotknutej osobe patria.</p>
+    <p>Zásady sa vzťahujú na spracúvanie údajov v súvislosti s prevádzkou webovej stránky a členskej sekcie kurzu Strhni Dav. Nevzťahujú sa na weby ani služby tretích strán, na ktoré z našej stránky prípadne odkazujeme.</p>
+  </section>
+
+  <section class="article" id="3">
+    <h2><span class="num">3</span>Aké údaje spracúvame</h2>
+    <p>Spracúvame nasledujúce kategórie osobných údajov:</p>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Kategória</th><th>Konkrétne údaje</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Prihlasovacie a profilové údaje</td><td>Meno, e-mailová adresa, profilová fotografia a unikátny identifikátor z vášho Google účtu, získané pri prihlásení cez Google OAuth.</td></tr>
+          <tr><td>Údaje o priebehu kurzu</td><td>Dátum a stav odomknutia jednotlivých lekcií, rozpozeraná a dopozeraná časť videí, história vašich odovzdaných úloh.</td></tr>
+          <tr><td>Obsah odovzdaných úloh</td><td>Text, obrázky alebo dokumenty (napr. PDF), ktoré nahráte ako splnenie úlohy k lekcii.</td></tr>
+          <tr><td>Diskusné príspevky</td><td>Text komentárov, ktoré napíšete pod jednotlivými lekciami, spolu s menom a fotografiou z vášho Google účtu.</td></tr>
+          <tr><td>Platobné a fakturačné údaje</td><td>Informácia o uhradení a výške Ceny, dátum platby, stav transakcie a okamih, kedy ste pred platbou udelili súhlas so stratou práva na odstúpenie (čl. 6 Obchodných podmienok). Číslo platobnej karty a iné citlivé platobné údaje nespracúvame ani neukladáme — tie spracúva výhradne Stripe.</td></tr>
+          <tr><td>Technické a prevádzkové údaje</td><td>IP adresa, typ prehliadača a zariadenia, dátum a čas prístupu, záznamy o chybách (server logy), potrebné na prevádzku a zabezpečenie členskej sekcie.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dim">Osobitné kategórie osobných údajov (napr. o zdravotnom stave) od vás aktívne nezbierame. Ak takéto údaje dobrovoľne uvediete v texte odovzdanej úlohy alebo komentára, spracúvame ich len v rozsahu a na účel, na ktorý ste ich sami sprístupnili, a odporúčame v týchto poliach uvádzať iba údaje, ktoré sú na splnenie úlohy nevyhnutné.</p>
+  </section>
+
+  <section class="article" id="4">
+    <h2><span class="num">4</span>Účely a právne základy</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Účel spracúvania</th><th>Právny základ (čl. 6 GDPR)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Vytvorenie a správa používateľského účtu, prihlasovanie</td><td>Plnenie zmluvy — čl. 6 ods. 1 písm. b)</td></tr>
+          <tr><td>Sprístupňovanie lekcií, sledovanie postupu, odomykanie obsahu</td><td>Plnenie zmluvy — čl. 6 ods. 1 písm. b)</td></tr>
+          <tr><td>Vyhodnocovanie odovzdaných úloh (vrátane AI vyhodnotenia)</td><td>Plnenie zmluvy — čl. 6 ods. 1 písm. b)</td></tr>
+          <tr><td>Spracovanie platby Ceny a evidencia súhlasu so stratou práva na odstúpenie</td><td>Plnenie zmluvy / zákonná povinnosť — čl. 6 ods. 1 písm. b), c)</td></tr>
+          <tr><td>Zobrazovanie a moderovanie diskusných príspevkov</td><td>Oprávnený záujem na fungujúcej a bezpečnej diskusii — čl. 6 ods. 1 písm. f)</td></tr>
+          <tr><td>Vedenie účtovných a daňových dokladov</td><td>Plnenie zákonnej povinnosti — čl. 6 ods. 1 písm. c)</td></tr>
+          <tr><td>Zabezpečenie prevádzky, predchádzanie zneužitiu, server logy</td><td>Oprávnený záujem na bezpečnej a funkčnej prevádzke — čl. 6 ods. 1 písm. f)</td></tr>
+          <tr><td>Vybavovanie reklamácií a komunikácia s vami</td><td>Plnenie zmluvy / oprávnený záujem — čl. 6 ods. 1 písm. b), f)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="article" id="5">
+    <h2><span class="num">5</span>Príjemcovia a sprostredkovatelia</h2>
+    <p>Na prevádzku kurzu využívame nasledujúce spoločnosti, ktorým sa v nevyhnutnom rozsahu sprístupňujú vaše osobné údaje ako sprostredkovateľom alebo samostatným prevádzkovateľom:</p>
+    <ol class="legal">
+      <li><strong>Google Ireland Limited</strong> — poskytovateľ prihlásenia (Google OAuth). Google nám v rámci prihlásenia poskytuje vaše meno, e-mailovú adresu, profilovú fotografiu a identifikátor účtu. Spracúvanie zo strany Google sa riadi vlastnými zásadami ochrany súkromia Google.</li>
+      <li><strong>Stripe, Inc.</strong> — spracovanie platby Ceny. Stripe spracúva platobné údaje priamo, my dostávame len potvrdenie o výsledku a základné metadáta platby (suma, dátum, stav). Spracúvanie zo strany Stripe sa riadi vlastnými zásadami ochrany súkromia Stripe.</li>
+      <li><strong>Anthropic, PBC</strong> — automatizované vyhodnocovanie textových, obrazových a dokumentových úloh pomocou umelej inteligencie (bližšie v čl. 8). Obsah odovzdanej úlohy je Anthropic spracovaný na účel jeho vyhodnotenia.</li>
+      <li>Poskytovateľ serverovej infraštruktúry (hosting), na ktorej je členská sekcia prevádzkovaná, v rozsahu potrebnom na uloženie dát a chod aplikácie.</li>
+    </ol>
+    <p>Vaše osobné údaje nepredávame ani neprenajímame tretím stranám na marketingové účely.</p>
+  </section>
+
+  <section class="article" id="6">
+    <h2><span class="num">6</span>Prenos do tretích krajín</h2>
+    <p>Google, Stripe a Anthropic sú spoločnosti so sídlom alebo servermi aj mimo Európskeho hospodárskeho priestoru, najmä v USA. V rozsahu, v akom v súvislosti s využívaním ich služieb dochádza k prenosu osobných údajov do tretej krajiny, sa tento prenos uskutočňuje na základe záruk podľa čl. 46 GDPR — najmä štandardných zmluvných doložiek schválených Európskou komisiou, prípadne iného platného mechanizmu, ktorý daný poskytovateľ uplatňuje. Kópiu relevantných záruk môžete na požiadanie získať na kontaktnom e-maile v čl. 1.</p>
+  </section>
+
+  <section class="article" id="7">
+    <h2><span class="num">7</span>Doba uchovávania</h2>
+    <ol class="legal">
+      <li>Údaje spojené s vaším používateľským účtom (profil, postup v kurze, odovzdané úlohy, komentáre) uchovávame po dobu trvania vášho účtu a primeraný čas po jeho zrušení, najviac však 3 roky od poslednej aktivity, pokiaľ osobitný predpis nevyžaduje dlhšiu lehotu.</li>
+      <li>Účtovné a daňové doklady súvisiace s platbou Ceny uchovávame po dobu vyžadovanú príslušnými právnymi predpismi (spravidla 10 rokov).</li>
+      <li>Server logy a technické záznamy uchovávame spravidla najviac 12 mesiacov, pokiaľ nie sú potrebné dlhšie na objasnenie bezpečnostného incidentu.</li>
+      <li>Po uplynutí príslušnej doby údaje bezpečne vymažeme alebo anonymizujeme.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="8">
+    <h2><span class="num">8</span>Automatizované vyhodnocovanie úloh</h2>
+    <div class="callout">
+      <div class="callout-label">Dôležité upozornenie</div>
+      <p>Pri niektorých typoch úloh je obsah, ktorý odovzdáte (text, obrázok alebo dokument), automaticky odoslaný službe umelej inteligencie spoločnosti Anthropic na účel jeho vyhodnotenia. Ide o formu automatizovaného spracúvania v zmysle čl. 22 GDPR, ktorého výsledkom je informatívna spätná väzba k vašej úlohe — nejde o rozhodnutie s právnymi účinkami ani o rozhodnutie inak vás výrazne ovplyvňujúce; sprístupnenie ďalšej lekcie je vždy podmienené len tým, že úlohu odovzdáte alebo označíte ako splnenú, nie konkrétnym hodnotením AI.</p>
+    </div>
+    <p>Ak s automatizovaným vyhodnotením nesúhlasíte alebo oň nemáte záujem, môžete nás kontaktovať na e-maile v čl. 1 a požiadať o manuálne posúdenie odovzdanej úlohy.</p>
+  </section>
+
+  <section class="article" id="9">
+    <h2><span class="num">9</span>Práva dotknutej osoby</h2>
+    <p>Vo vzťahu k vašim osobným údajom máte najmä nasledujúce práva:</p>
+    <ul>
+      <li><strong>Právo na prístup</strong> — získať potvrdenie, či spracúvame vaše osobné údaje, a kópiu týchto údajov.</li>
+      <li><strong>Právo na opravu</strong> — požadovať opravu nesprávnych alebo doplnenie neúplných údajov.</li>
+      <li><strong>Právo na vymazanie</strong> — požadovať vymazanie vašich údajov, ak už nie sú potrebné na účel, na ktorý boli získané, alebo ak odvoláte súhlas či namietnete spracúvanie a neexistuje iný právny dôvod.</li>
+      <li><strong>Právo na obmedzenie spracúvania</strong> — v prípadoch podľa čl. 18 GDPR.</li>
+      <li><strong>Právo na prenosnosť údajov</strong> — získať údaje, ktoré ste nám poskytli, v štruktúrovanom, bežne používanom a strojovo čitateľnom formáte.</li>
+      <li><strong>Právo namietať</strong> — proti spracúvaniu založenému na oprávnenom záujme podľa čl. 4.</li>
+      <li><strong>Právo odvolať súhlas</strong> — ak je spracúvanie založené na súhlase, kedykoľvek s účinnosťou do budúcna.</li>
+      <li><strong>Právo podať sťažnosť</strong> — na Úrad na ochranu osobných údajov Slovenskej republiky (Hraničná 12, 820 07 Bratislava 27, <a href="https://dataprotection.gov.sk">dataprotection.gov.sk</a>), prípadne na dozorný orgán v inom členskom štáte EÚ.</li>
+    </ul>
+    <p>Uvedené práva môžete uplatniť e-mailom na <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a>. Na vašu žiadosť odpovieme bez zbytočného odkladu, najneskôr do jedného mesiaca od jej doručenia.</p>
+  </section>
+
+  <section class="article" id="10">
+    <h2><span class="num">10</span>Cookies</h2>
+    <ol class="legal">
+      <li>Členská sekcia používa nevyhnutné (technické) cookies a podobné technológie, najmä na udržanie vášho prihlásenia (session cookie) a zapamätanie základných nastavení. Bez týchto cookies by členská sekcia nemohla správne fungovať, preto na ich použitie nepotrebujeme váš súhlas.</li>
+      <li>Analytické, marketingové ani reklamné cookies tretích strán na tejto webovej stránke aktuálne nepoužívame. Ak by sme ich v budúcnosti zaviedli, vyžiadame si na to váš predchádzajúci súhlas v súlade s platnými predpismi.</li>
+      <li>Väčšina webových prehliadačov umožňuje cookies spravovať alebo zablokovať v nastaveniach prehliadača; zablokovanie nevyhnutných cookies však môže znemožniť prihlásenie do členskej sekcie.</li>
+    </ol>
+  </section>
+
+  <section class="article" id="11">
+    <h2><span class="num">11</span>Zabezpečenie údajov</h2>
+    <p>Prijímame primerané technické a organizačné opatrenia na ochranu vašich osobných údajov pred neoprávneným prístupom, stratou, zneužitím alebo zničením, najmä šifrovanú komunikáciu (HTTPS), šifrované uloženie video obsahu, obmedzený prístup k databáze a serveru len pre oprávnené osoby a priebežné aktualizácie použitého softvéru. Napriek tomu žiadny spôsob prenosu ani uloženia dát nie je stopercentne bezpečný; v prípade bezpečnostného incidentu s vplyvom na vaše práva vás o tom budeme informovať v súlade s GDPR.</p>
+  </section>
+
+  <section class="article" id="12">
+    <h2><span class="num">12</span>Deti a maloletí</h2>
+    <p>Kurz je určený osobám starším ako 18 rokov. Vedome nezískavame osobné údaje detí mladších ako 16 rokov bez súhlasu zákonného zástupcu. Ak sa dozvieme, že sme bez takéhoto súhlasu spracovali osobné údaje dieťaťa mladšieho ako 16 rokov, podnikneme kroky na ich čo najskoršie vymazanie.</p>
+  </section>
+
+  <section class="article" id="13">
+    <h2><span class="num">13</span>Zmeny a kontakt</h2>
+    <p>Tieto Zásady môžeme z času na čas aktualizovať, najmä v súvislosti so zmenou funkcií členskej sekcie, právnych predpisov alebo využívaných služieb tretích strán. Aktuálne znenie je vždy dostupné na tejto stránke; o podstatných zmenách vás podľa možnosti informujeme aj e-mailom alebo oznamom v členskej sekcii.</p>
+    <p>V prípade akýchkoľvek otázok týkajúcich sa spracúvania vašich osobných údajov nás kontaktujte na <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a>.</p>
+  </section>
+
+  <footer class="doc-footer">
+    <p><strong>Ngroup, s. r. o.</strong> · Dunajská 8, 811 08 Bratislava, Slovenská republika · IČO 53 813 189<br>Kontakt vo veciach ochrany osobných údajov: <a href="mailto:juraj@jurajkurek.com">juraj@jurajkurek.com</a></p>
+  </footer>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>Strhni Dav — pripravovaný online kurz</div>
+    <div><a href="https://strhnidav.sk/obchodne-podmienky">Obchodné podmienky</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
