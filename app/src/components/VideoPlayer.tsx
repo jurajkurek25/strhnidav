@@ -67,6 +67,16 @@ function FullscreenExitGlyph() {
     </svg>
   );
 }
+function CastGlyph() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7" />
+      <path d="M2 12a6 6 0 0 1 6 6" />
+      <path d="M2 16a2 2 0 0 1 2 2" />
+      <circle cx="2.5" cy="19.5" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 export function VideoPlayer({
   src,
@@ -88,6 +98,7 @@ export function VideoPlayer({
   const reportedRef = useRef(alreadyWatched);
   const lastSavedPercentRef = useRef(Math.floor(initialPercent));
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   const [percent, setPercent] = useState(Math.floor(initialPercent));
   const [watched, setWatched] = useState(alreadyWatched);
@@ -102,17 +113,22 @@ export function VideoPlayer({
   const [scrubbing, setScrubbing] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
+  const [castAvailable, setCastAvailable] = useState(false);
+  const [casting, setCasting] = useState(false);
   const speedMenuRef = useRef<HTMLDivElement>(null);
 
   // src points at an encrypted HLS playlist (.m3u8) — segments are AES-128
   // encrypted and served publicly, the decryption key is fetched by the
   // player from the authenticated /api/video-key/[lessonId] endpoint, so
   // credentials (the login cookie) must ride along with that request.
-  useEffect(() => {
+  // Pulled out of the effect so a Cast disconnect (handleCast below) can
+  // re-run the exact same setup to resume local in-browser playback.
+  const attachLocalSource = useCallback(() => {
     const video = videoRef.current;
     if (!video || !src) return;
 
-    let hls: Hls | null = null;
+    hlsRef.current?.destroy();
+    hlsRef.current = null;
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       // Safari plays HLS natively, including EXT-X-KEY fetches (same-origin
@@ -121,20 +137,80 @@ export function VideoPlayer({
     } else {
       import("hls.js").then(({ default: HlsCtor }) => {
         if (!HlsCtor.isSupported() || !videoRef.current) return;
-        hls = new HlsCtor({
+        const hls = new HlsCtor({
           xhrSetup: (xhr) => {
             xhr.withCredentials = true;
           },
         });
         hls.loadSource(src);
         hls.attachMedia(videoRef.current);
+        hlsRef.current = hls;
       });
     }
+  }, [src]);
+
+  useEffect(() => {
+    attachLocalSource();
+    return () => {
+      hlsRef.current?.destroy();
+      hlsRef.current = null;
+    };
+  }, [attachLocalSource]);
+
+  // Chromecast via the browser's built-in Remote Playback API — no Google
+  // Cast SDK, no external script. Only shown once Chrome actually reports a
+  // nearby receiver (watchAvailability), and silently stays hidden on
+  // browsers that don't implement the API at all (Safari/Firefox).
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video?.remote?.watchAvailability) return;
+
+    let cancelled = false;
+    const remote = video.remote;
+
+    remote.watchAvailability((available) => {
+      if (!cancelled) setCastAvailable(available);
+    }).catch(() => {});
+
+    function onConnecting() {
+      setCasting(true);
+    }
+    function onDisconnect() {
+      setCasting(false);
+      attachLocalSource(); // resume local in-browser playback
+    }
+    remote.addEventListener("connecting", onConnecting);
+    remote.addEventListener("connect", onConnecting);
+    remote.addEventListener("disconnect", onDisconnect);
 
     return () => {
-      hls?.destroy();
+      cancelled = true;
+      remote.cancelWatchAvailability().catch(() => {});
+      remote.removeEventListener("connecting", onConnecting);
+      remote.removeEventListener("connect", onConnecting);
+      remote.removeEventListener("disconnect", onDisconnect);
     };
-  }, [src]);
+  }, [attachLocalSource]);
+
+  async function handleCast() {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      const res = await fetch(`/api/cast/${lessonId}`, { method: "POST" });
+      if (!res.ok) throw new Error("cast session failed");
+      const { url } = (await res.json()) as { url: string };
+
+      hlsRef.current?.detachMedia();
+      hlsRef.current = null;
+      video.src = url; // must be a real network URL — the receiver fetches it directly
+      await video.remote.prompt();
+    } catch {
+      // Device picker cancelled, or minting the session failed — either
+      // way, go back to normal in-browser playback instead of sitting on
+      // a broken <video src>.
+      attachLocalSource();
+    }
+  }
 
   useEffect(() => {
     const video = videoRef.current;
@@ -475,6 +551,20 @@ export function VideoPlayer({
               aria-label="Hlasitosť"
             />
           </div>
+
+          {castAvailable && (
+            <button
+              type="button"
+              aria-label={casting ? "Prehráva sa na TV" : "Prehrať na TV (Chromecast)"}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCast();
+              }}
+              className={`transition ${casting ? "text-gold-bright" : "text-cream hover:text-gold-bright"}`}
+            >
+              <CastGlyph />
+            </button>
+          )}
 
           <button
             type="button"
