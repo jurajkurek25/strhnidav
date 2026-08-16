@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -56,6 +56,11 @@ function Row({ section }: { section: SectionItem }) {
 
 export function SortableSections({ initialSections }: { initialSections: SectionItem[] }) {
   const [sections, setSections] = useState(initialSections);
+  // initialSections is a fresh array every time the server component behind
+  // this page re-renders (after createSection/deleteSection revalidate it),
+  // but useState's initializer only runs on mount — without this effect,
+  // adds/deletes never reach the already-mounted local copy below.
+  useEffect(() => setSections(initialSections), [initialSections]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })

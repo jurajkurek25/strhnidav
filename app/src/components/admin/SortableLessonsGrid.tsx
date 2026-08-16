@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -57,6 +57,11 @@ export function SortableLessonsGrid({ initialLessons }: { initialLessons: Lesson
     // server round-trips; keep whatever order the caller already sorted.
     initialLessons
   );
+  // initialLessons is a fresh array every time the server component behind
+  // this page re-renders (after saveLesson/deleteLesson revalidate it), but
+  // useState's initializer only runs on mount — without this effect,
+  // adds/deletes never reach the already-mounted local copy above.
+  useEffect(() => setLessons(initialLessons), [initialLessons]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
