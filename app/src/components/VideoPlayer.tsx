@@ -158,15 +158,22 @@ export function VideoPlayer({
   }, [attachLocalSource]);
 
   // Chromecast via the browser's built-in Remote Playback API — no Google
-  // Cast SDK, no external script. Only shown once Chrome actually reports a
-  // nearby receiver (watchAvailability), and silently stays hidden on
-  // browsers that don't implement the API at all (Safari/Firefox).
+  // Cast SDK, no external script. Chrome only offers to cast a source it
+  // considers "remote-playback eligible", and a blob:/MediaSource source —
+  // which is what the *visible* element above uses for local hls.js
+  // playback — never qualifies, no matter how many receivers are on the
+  // network. So availability is watched on a second, hidden <video> whose
+  // src is always a real network URL, completely decoupled from local
+  // playback; only shown once that reports a nearby receiver, and silently
+  // stays hidden on browsers without the API at all (Safari/Firefox).
+  const castProbeRef = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video?.remote?.watchAvailability) return;
+    const probe = castProbeRef.current;
+    if (!probe?.remote?.watchAvailability || !src) return;
 
     let cancelled = false;
-    const remote = video.remote;
+    const remote = probe.remote;
 
     remote.watchAvailability((available) => {
       if (!cancelled) setCastAvailable(available);
@@ -177,7 +184,7 @@ export function VideoPlayer({
     }
     function onDisconnect() {
       setCasting(false);
-      attachLocalSource(); // resume local in-browser playback
+      probe!.src = src; // back to the plain (tokenless) URL for continued watching
     }
     remote.addEventListener("connecting", onConnecting);
     remote.addEventListener("connect", onConnecting);
@@ -190,25 +197,24 @@ export function VideoPlayer({
       remote.removeEventListener("connect", onConnecting);
       remote.removeEventListener("disconnect", onDisconnect);
     };
-  }, [attachLocalSource]);
+  }, [src]);
 
   async function handleCast() {
+    const probe = castProbeRef.current;
     const video = videoRef.current;
-    if (!video) return;
+    if (!probe) return;
     try {
       const res = await fetch(`/api/cast/${lessonId}`, { method: "POST" });
       if (!res.ok) throw new Error("cast session failed");
       const { url } = (await res.json()) as { url: string };
 
-      hlsRef.current?.detachMedia();
-      hlsRef.current = null;
-      video.src = url; // must be a real network URL — the receiver fetches it directly
-      await video.remote.prompt();
+      probe.src = url; // the tokenized manifest the receiver fetches directly
+      video?.pause(); // avoid the same lesson playing out loud locally too
+      await probe.remote.prompt();
     } catch {
-      // Device picker cancelled, or minting the session failed — either
-      // way, go back to normal in-browser playback instead of sitting on
-      // a broken <video src>.
-      attachLocalSource();
+      // Device picker cancelled, or minting the session failed — reset the
+      // probe back to a valid source so availability watching keeps working.
+      if (src) probe.src = src;
     }
   }
 
@@ -416,6 +422,12 @@ export function VideoPlayer({
         }}
         className="h-full w-full"
       />
+
+      {/* Never played, never visible — exists only so the Remote Playback
+          API has a real network URL to evaluate for Chromecast
+          availability, and to be handed off to when casting starts. See
+          the comment on castProbeRef above. */}
+      <video ref={castProbeRef} src={src} muted playsInline preload="metadata" tabIndex={-1} aria-hidden className="hidden" />
 
       {loading && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
