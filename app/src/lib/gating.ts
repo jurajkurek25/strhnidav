@@ -31,23 +31,28 @@ export function nextDayUnlock(completedAt: Date): Date {
   return d;
 }
 
+interface ChainResult {
+  state: LessonState;
+  unlocksAt: Date | null;
+}
+
 /**
- * Walks the course in day_number order, computing each lesson's state from
- * the previous lesson's progress. `courseLessons` must already be sorted
- * ascending by dayNumber and `progressByLessonId` should contain every
- * progress row the caller has for this user.
+ * Walks a single ordered subsequence of lessons, computing each one's state
+ * from the previous entry *in that subsequence* — not from whatever lesson
+ * happens to sit next to it in the full course. This is the shared engine
+ * behind both tracks in computeLessonStates below.
  */
-export function computeLessonStates(
-  courseLessons: Lesson[],
+function walkChain(
+  trackLessons: Lesson[],
   progressByLessonId: Map<string, Progress>,
   hasFullAccess: boolean,
-  purchasedSectionIds: Set<string> = new Set()
-): LessonWithState[] {
-  const result: LessonWithState[] = [];
+  purchasedSectionIds: Set<string>
+): Map<string, ChainResult> {
+  const result = new Map<string, ChainResult>();
   let prevCompletedAt: Date | null = null;
   let chainBroken = false; // true once we hit a lesson that isn't completed yet
 
-  for (const lesson of courseLessons) {
+  for (const lesson of trackLessons) {
     const progress = progressByLessonId.get(lesson.id) ?? null;
     const isCompleted = Boolean(progress?.completedAt);
 
@@ -55,7 +60,7 @@ export function computeLessonStates(
     let unlocksAt: Date | null = null;
 
     if (prevCompletedAt === null && !chainBroken) {
-      // First lesson in the course: always available immediately.
+      // First lesson in this track: always available immediately.
       state = isCompleted ? "completed" : "unlocked";
     } else if (chainBroken) {
       state = "locked_time";
@@ -75,18 +80,56 @@ export function computeLessonStates(
       }
     }
 
-    result.push({ lesson, progress, state, unlocksAt });
+    result.set(lesson.id, { state, unlocksAt });
 
     if (isCompleted) {
       prevCompletedAt = progress!.completedAt;
     } else {
       // Whether this lesson is open, paywalled, or time-locked, nothing
-      // after it can unlock until *this* one is actually completed.
+      // after it (in this same track) can unlock until *this* one is
+      // actually completed.
       chainBroken = true;
     }
   }
 
   return result;
+}
+
+/**
+ * Computes every lesson's state from two independent day-by-day chains:
+ *
+ * - The full course, in day_number order — this is what paid lessons gate
+ *   on, exactly as before. Reaching a paid lesson still requires every
+ *   lesson before it (free or paid) to be completed in order.
+ * - The free lessons alone, in their own day_number order — this is what
+ *   free lessons gate on, so a free lesson scheduled after an unpurchased
+ *   paid one (e.g. a free bonus lesson on day 25) is never trapped behind
+ *   it. It only waits on the free lesson before *it*, one day at a time,
+ *   same as any other lesson.
+ *
+ * `courseLessons` must already be sorted ascending by dayNumber and
+ * `progressByLessonId` should contain every progress row the caller has for
+ * this user.
+ */
+export function computeLessonStates(
+  courseLessons: Lesson[],
+  progressByLessonId: Map<string, Progress>,
+  hasFullAccess: boolean,
+  purchasedSectionIds: Set<string> = new Set()
+): LessonWithState[] {
+  const mainChain = walkChain(courseLessons, progressByLessonId, hasFullAccess, purchasedSectionIds);
+  const freeChain = walkChain(
+    courseLessons.filter((l) => l.isFree),
+    progressByLessonId,
+    hasFullAccess,
+    purchasedSectionIds
+  );
+
+  return courseLessons.map((lesson) => {
+    const progress = progressByLessonId.get(lesson.id) ?? null;
+    const { state, unlocksAt } = (lesson.isFree ? freeChain : mainChain).get(lesson.id)!;
+    return { lesson, progress, state, unlocksAt };
+  });
 }
 
 /** Convenience for a single lesson lookup, e.g. `states.get(dayNumber)`. */
