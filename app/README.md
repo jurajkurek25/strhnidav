@@ -220,6 +220,35 @@ Nginx reverse proxy aj Let's Encrypt SSL automaticky.
    (ako by to bolo na Verceli), dlhé videá nie sú problém, len si to
    poriadne "sadne" na CPU na pár sekúnd/minút podľa dĺžky videa.
 
+## 8. E-mailové notifikácie (SMTP + denný cron)
+
+Appka vie posielať dva typy e-mailov cez vlastný SMTP (žiadna tretia strana
+ako Mailgun/Sendgrid):
+
+- **Odomknutie lekcie** — pošle sa presne v deň, keď sa niekomu odomkne
+  ďalšia lekcia (Deň 1 sa nepočíta, ten je dostupný hneď po registrácii).
+- **Pripomienka** — ak si po 3 dňoch od odomknutia lekciu ešte nezačal/-a,
+  pošle sa jedna jemná pripomienka (a už nie viac, kým lekciu nedokončíš).
+
+Obe sú idempotentné — každý e-mail sa danému používateľovi k danej lekcii
+pošle najviac raz, aj keby sa cron spustil viackrát (tabuľka
+`email_notifications` v `migrations/0004_email_notifications.sql`).
+
+1. Doplň do `.env` SMTP údaje od tvojho poskytovateľa (`SMTP_HOST`,
+   `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`). Pokým `SMTP_HOST`
+   necháš prázdne, appka e-maily len loguje a nič neposiela — nič sa
+   nepokazí, kým SMTP nezapojíš.
+2. Vygeneruj `CRON_SECRET` (`openssl rand -hex 24`) a daj ho do `.env`.
+3. Spusti migráciu:
+   ```bash
+   psql "$DATABASE_URL" -f migrations/0004_email_notifications.sql
+   ```
+4. Pridaj do crontabu (`crontab -e`) riadok, ktorý raz denne (napr. o 8:00)
+   zavolá endpoint — nahraď `CRON_SECRET_HODNOTA` skutočnou hodnotou z `.env`:
+   ```
+   0 8 * * * curl -s -X POST -H "Authorization: Bearer CRON_SECRET_HODNOTA" https://kurz.strhnidav.sk/api/cron/daily-digest
+   ```
+
 ## Ochrana videa — vlastné šifrovanie (nie klasické DRM)
 
 Video sa pri nahratí v admin paneli rozseká a zašifruje (AES-128, HLS

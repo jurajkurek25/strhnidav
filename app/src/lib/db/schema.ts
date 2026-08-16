@@ -177,6 +177,24 @@ export const certificates = pgTable("certificates", {
   issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type EmailNotificationKind = "unlock" | "nudge";
+
+// One row per email actually sent for a given (user, lesson, kind) — the
+// unique constraint is what makes the daily digest cron idempotent: running
+// it twice, or restarting mid-run, can never double-send the same lesson's
+// unlock email or nudge to the same person.
+export const emailNotifications = pgTable(
+  "email_notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    lessonId: uuid("lesson_id").notNull().references(() => lessons.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<EmailNotificationKind>().notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.userId, table.lessonId, table.kind)]
+);
+
 // Whitelists a Gmail address for free full-course access — applied
 // immediately if that person already has a profile, and automatically on
 // first sign-in otherwise (see the signIn callback in src/auth.ts).

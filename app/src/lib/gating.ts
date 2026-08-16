@@ -24,7 +24,7 @@ export interface LessonWithState {
  * and every lesson after that still needs its own video+task completion
  * before its own successor's one-day timer even starts.
  */
-function nextDayUnlock(completedAt: Date): Date {
+export function nextDayUnlock(completedAt: Date): Date {
   const d = new Date(completedAt);
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 1);
