@@ -7,7 +7,7 @@ export type LessonState =
   | "completed" // video watched + task approved
   | "unlocked" // available to watch/work on right now
   | "locked_time" // previous lesson not finished yet, or the 1-day wait hasn't elapsed
-  | "locked_paywall"; // time-unlocked but lessons 8+ require the 249€ purchase
+  | "locked_paywall"; // time-unlocked but lessons 8+ require the 299€ purchase
 
 export interface LessonWithState {
   lesson: Lesson;

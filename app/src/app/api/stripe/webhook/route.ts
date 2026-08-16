@@ -59,7 +59,7 @@ export async function POST(request: Request) {
           stripeSessionId: session.id,
           stripePaymentIntent:
             typeof session.payment_intent === "string" ? session.payment_intent : null,
-          amountCents: session.amount_total ?? 24900,
+          amountCents: session.amount_total ?? 29900,
           currency: session.currency ?? "eur",
           status: "paid",
           withdrawalConsentAt: consentAt ? new Date(consentAt) : null,

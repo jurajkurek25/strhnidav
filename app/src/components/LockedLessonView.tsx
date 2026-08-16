@@ -32,7 +32,7 @@ export function LockedLessonView({
         <>
           <p className="max-w-md text-sm leading-relaxed text-muted">
             Prvých 7 lekcií máš zadarmo. Táto lekcia je súčasťou plného kurzu — odomkni si ho
-            jednou platbou 249 €.
+            jednou platbou 299 €.
           </p>
           <Link href="/dashboard/unlock" className="btn">
             Odomkni celý kurz
