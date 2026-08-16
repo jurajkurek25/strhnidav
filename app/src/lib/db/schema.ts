@@ -165,7 +165,7 @@ export const payments = pgTable("payments", {
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   stripeSessionId: text("stripe_session_id").unique(),
   stripePaymentIntent: text("stripe_payment_intent"),
-  amountCents: integer("amount_cents").notNull().default(19900),
+  amountCents: integer("amount_cents").notNull().default(24900),
   currency: text("currency").notNull().default("eur"),
   status: text("status").$type<PaymentStatus>().notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
