@@ -5,11 +5,13 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 
 export function VideoPlayerSection({
   lessonId,
+  title,
   src,
   initialPercent,
   alreadyWatched,
 }: {
   lessonId: string;
+  title: string;
   src: string | null;
   initialPercent: number;
   alreadyWatched: boolean;
@@ -27,6 +29,7 @@ export function VideoPlayerSection({
   return (
     <VideoPlayer
       lessonId={lessonId}
+      title={title}
       src={src}
       initialPercent={initialPercent}
       alreadyWatched={alreadyWatched}

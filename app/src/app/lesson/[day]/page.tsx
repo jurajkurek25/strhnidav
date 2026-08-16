@@ -154,6 +154,7 @@ export default async function LessonPage({
           <div className="flex flex-col gap-16">
             <VideoPlayerSection
               lessonId={lesson.id}
+              title={lesson.title}
               src={videoSrc}
               initialPercent={progress?.videoWatchedPercent ?? 0}
               alreadyWatched={Boolean(progress?.videoCompletedAt)}
