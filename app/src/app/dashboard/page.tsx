@@ -70,7 +70,7 @@ export default async function DashboardPage() {
               </p>
             </div>
             <a href="/dashboard/certificate" className="btn shrink-0">
-              Zobraziť certifikát
+              Vygenerovať certifikát
             </a>
           </div>
         )}
