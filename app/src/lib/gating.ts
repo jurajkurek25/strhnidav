@@ -40,7 +40,8 @@ export function nextDayUnlock(completedAt: Date): Date {
 export function computeLessonStates(
   courseLessons: Lesson[],
   progressByLessonId: Map<string, Progress>,
-  hasFullAccess: boolean
+  hasFullAccess: boolean,
+  purchasedSectionIds: Set<string> = new Set()
 ): LessonWithState[] {
   const result: LessonWithState[] = [];
   let prevCompletedAt: Date | null = null;
@@ -63,7 +64,11 @@ export function computeLessonStates(
       if (new Date() < openAt) {
         state = "locked_time";
         unlocksAt = openAt;
-      } else if (!lesson.isFree && !hasFullAccess) {
+      } else if (
+        !lesson.isFree &&
+        !hasFullAccess &&
+        !(lesson.sectionId && purchasedSectionIds.has(lesson.sectionId))
+      ) {
         state = "locked_paywall";
       } else {
         state = isCompleted ? "completed" : "unlocked";

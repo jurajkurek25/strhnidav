@@ -61,7 +61,7 @@ export function LessonGridCard({ entry }: { entry: LessonWithState }) {
       {!accessible && (
         <span className="absolute bottom-2.5 left-2.5 right-2.5 text-center text-[11px] leading-tight text-cream/80">
           {state === "locked_paywall"
-            ? "Odomkni celý kurz"
+            ? "Odomkni tento blok"
             : unlocksAt
             ? `Odomkne sa ${formatUnlockDate(unlocksAt)}`
             : "Dokonči predchádzajúcu lekciu"}
@@ -100,8 +100,11 @@ export function LessonGridCard({ entry }: { entry: LessonWithState }) {
   }
 
   if (state === "locked_paywall") {
+    const href = lesson.sectionId
+      ? `/dashboard/unlock#blok-${lesson.sectionId}`
+      : "/dashboard/unlock";
     return (
-      <Link href="/dashboard/unlock" className="block h-full">
+      <Link href={href} className="block h-full">
         {body}
       </Link>
     );

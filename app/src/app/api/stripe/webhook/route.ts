@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { profiles, payments } from "@/lib/db/schema";
+import { profiles, payments, sectionPurchases } from "@/lib/db/schema";
 
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
@@ -24,8 +24,26 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.client_reference_id ?? session.metadata?.user_id;
+    const sectionId = session.metadata?.section_id;
 
-    if (userId) {
+    if (userId && sectionId) {
+      await db
+        .insert(sectionPurchases)
+        .values({
+          userId,
+          sectionId,
+          stripeSessionId: session.id,
+          stripePaymentIntent:
+            typeof session.payment_intent === "string" ? session.payment_intent : null,
+          amountCents: session.amount_total ?? 9900,
+          currency: session.currency ?? "eur",
+          status: "paid",
+        })
+        .onConflictDoUpdate({
+          target: sectionPurchases.stripeSessionId,
+          set: { status: "paid" },
+        });
+    } else if (userId) {
       const now = new Date();
       const consentAt = session.metadata?.withdrawal_consent_at;
 

@@ -1,7 +1,7 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { asc, and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { lessons, userLessonProgress } from "@/lib/db/schema";
+import { lessons, userLessonProgress, sectionPurchases } from "@/lib/db/schema";
 import { computeLessonStates, type LessonWithState } from "@/lib/gating";
 
 export { statesByDayNumber } from "@/lib/gating";
@@ -10,14 +10,22 @@ export async function getLessonStatesForUser(
   userId: string,
   hasFullAccess: boolean
 ): Promise<LessonWithState[]> {
-  const [allLessons, progress] = await Promise.all([
+  const [allLessons, progress, purchasedSections] = await Promise.all([
     db.select().from(lessons).orderBy(asc(lessons.dayNumber)),
     db.select().from(userLessonProgress).where(eq(userLessonProgress.userId, userId)),
+    // Full access already unlocks everything, so skip the lookup.
+    hasFullAccess
+      ? Promise.resolve([])
+      : db
+          .select({ sectionId: sectionPurchases.sectionId })
+          .from(sectionPurchases)
+          .where(and(eq(sectionPurchases.userId, userId), eq(sectionPurchases.status, "paid"))),
   ]);
 
   const progressByLessonId = new Map(progress.map((p) => [p.lessonId, p]));
+  const purchasedSectionIds = new Set(purchasedSections.map((s) => s.sectionId));
 
-  return computeLessonStates(allLessons, progressByLessonId, hasFullAccess);
+  return computeLessonStates(allLessons, progressByLessonId, hasFullAccess, purchasedSectionIds);
 }
 
 /**

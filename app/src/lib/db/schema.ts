@@ -140,6 +140,26 @@ export const comments = pgTable(
   (t) => [index("comments_lesson_idx").on(t.lessonId)]
 );
 
+// One row per attempted purchase of a single section ("block") — the
+// per-block alternative to a full-course `payments` row. Access to a
+// section's paywalled lessons is granted once a row here reaches
+// status "paid" (see computeLessonStates in src/lib/gating.ts).
+export const sectionPurchases = pgTable(
+  "section_purchases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    sectionId: uuid("section_id").notNull().references(() => sections.id, { onDelete: "cascade" }),
+    stripeSessionId: text("stripe_session_id").unique(),
+    stripePaymentIntent: text("stripe_payment_intent"),
+    amountCents: integer("amount_cents").notNull().default(9900),
+    currency: text("currency").notNull().default("eur"),
+    status: text("status").$type<PaymentStatus>().notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("section_purchases_user_idx").on(t.userId)]
+);
+
 export const payments = pgTable("payments", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),

@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
+import { asc, and, eq } from "drizzle-orm";
 import { requireProfile } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { sections, lessons, sectionPurchases } from "@/lib/db/schema";
+import { COURSE_PRICE_EUR, BLOCK_PRICE_EUR } from "@/lib/stripe";
 import { Header } from "@/components/Header";
-import { UnlockButton } from "@/components/UnlockButton";
+import { UnlockOptions } from "@/components/UnlockOptions";
 
 export default async function UnlockPage({
   searchParams,
@@ -12,6 +16,34 @@ export default async function UnlockPage({
   const { status } = await searchParams;
 
   if (profile.hasFullAccess) redirect("/dashboard");
+
+  const [allSections, allLessons, purchases] = await Promise.all([
+    db.select().from(sections).orderBy(asc(sections.orderIndex)),
+    db.select({ sectionId: lessons.sectionId, isFree: lessons.isFree }).from(lessons),
+    db
+      .select({ sectionId: sectionPurchases.sectionId })
+      .from(sectionPurchases)
+      .where(and(eq(sectionPurchases.userId, profile.id), eq(sectionPurchases.status, "paid"))),
+  ]);
+
+  const purchasedSectionIds = new Set(purchases.map((p) => p.sectionId));
+
+  // Only sections that actually gate at least one lesson behind the paywall
+  // are worth selling individually — a section that's entirely free (or
+  // empty) has nothing to buy.
+  const blocks = allSections
+    .map((section) => {
+      const sectionLessons = allLessons.filter((l) => l.sectionId === section.id);
+      return {
+        id: section.id,
+        title: section.title,
+        description: section.description,
+        lessonCount: sectionLessons.length,
+        purchasable: sectionLessons.some((l) => !l.isFree),
+        purchased: purchasedSectionIds.has(section.id),
+      };
+    })
+    .filter((b) => b.purchasable);
 
   return (
     <>
@@ -33,28 +65,7 @@ export default async function UnlockPage({
           </p>
         )}
 
-        <div className="card mt-12 grid gap-12 p-12 md:grid-cols-[1fr_360px] md:items-start">
-          <div>
-            <div className="font-display text-[clamp(48px,6vw,72px)] font-semibold leading-none text-gold-bright">
-              199<span className="ml-2 font-body text-[0.35em] font-medium text-muted">€ / celý kurz</span>
-            </div>
-            <ul className="mt-8 flex flex-col gap-3">
-              {[
-                "Prístup ku všetkým lekciám kurzu",
-                "Ďalšie lekcie sa naďalej odomykajú deň po dni podľa tvojho postupu",
-                "Diskusia, dokumenty a audio ku každej lekcii",
-                "Konkrétne akčné kroky pri každej lekcii",
-                "Overiteľný certifikát o úspešnom absolvovaní kurzu",
-              ].map((li) => (
-                <li key={li} className="flex gap-3.5 text-[15px] text-muted">
-                  <span className="text-gold">—</span>
-                  {li}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <UnlockButton />
-        </div>
+        <UnlockOptions blocks={blocks} coursePriceEur={COURSE_PRICE_EUR} blockPriceEur={BLOCK_PRICE_EUR} />
       </main>
     </>
   );

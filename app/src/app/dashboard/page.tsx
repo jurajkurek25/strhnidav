@@ -54,7 +54,7 @@ export default async function DashboardPage() {
               {" "}
               Prvých 7 lekcií máš zadarmo — potom odomkneš{" "}
               <a href="/dashboard/unlock" className="text-gold-bright underline">
-                celý kurz za 199 €
+                celý kurz za 199 €, alebo jednotlivé bloky po 99 €
               </a>
               .
             </>
