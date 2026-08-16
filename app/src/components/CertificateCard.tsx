@@ -1,3 +1,5 @@
+import { Logo } from "@/components/Logo";
+
 const dateFormatter = new Intl.DateTimeFormat("sk-SK", {
   day: "numeric",
   month: "long",
@@ -26,8 +28,8 @@ export function CertificateCard({
         <div className="font-label text-[12px] font-bold uppercase tracking-[0.22em] text-gold sm:text-[13px]">
           Certifikát o absolvovaní
         </div>
-        <div className="mt-3 font-label text-[14px] font-bold uppercase tracking-[0.15em] text-muted">
-          Strhni<span className="text-gold">Dav</span>
+        <div className="mt-3">
+          <Logo size={18} wordmarkClassName="text-[14px] tracking-[0.15em] text-muted" />
         </div>
 
         <div className="mt-12 text-[13px] text-muted">Tento certifikát sa udeľuje</div>

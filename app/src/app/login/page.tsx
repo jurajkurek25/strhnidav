@@ -1,4 +1,5 @@
 import { signInWithGoogleAction } from "@/app/auth/actions";
+import { Logo } from "@/components/Logo";
 
 export default async function LoginPage({
   searchParams,
@@ -18,6 +19,9 @@ export default async function LoginPage({
       }}
     >
       <div className="card" style={{ padding: "48px", maxWidth: 400, width: "100%" }}>
+        <div style={{ marginBottom: 22 }}>
+          <Logo size={34} iconOnly />
+        </div>
         <div className="eyebrow" style={{ marginBottom: 22 }}>
           Členská sekcia
         </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOutAction } from "@/app/auth/actions";
+import { Logo } from "@/components/Logo";
 
 export function Header({
   name,
@@ -15,11 +16,8 @@ export function Header({
   return (
     <header className="sticky top-0 z-20 border-b border-card-line bg-bg/85 backdrop-blur-md">
       <nav className="wrap flex items-center justify-between gap-3 py-4 sm:py-6">
-        <Link
-          href={isAdmin ? "/admin" : "/dashboard"}
-          className="shrink-0 font-label text-[17px] font-bold uppercase tracking-wide text-cream sm:text-[22px]"
-        >
-          Strhni<span className="text-gold">Dav</span>
+        <Link href={isAdmin ? "/admin" : "/dashboard"} className="shrink-0">
+          <Logo size={26} wordmarkClassName="text-cream tracking-wide text-[15px] sm:text-[19px]" />
         </Link>
         <div className="flex min-w-0 items-center gap-2 sm:gap-7">
           {!isAdmin && !hasFullAccess && (

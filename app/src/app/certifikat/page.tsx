@@ -1,4 +1,5 @@
 import { CertificateLookupForm } from "@/components/CertificateLookupForm";
+import { Logo } from "@/components/Logo";
 
 export const metadata = {
   title: "Overenie certifikátu — Strhni Dav",
@@ -16,6 +17,9 @@ export default function CertifikatLookupPage() {
       }}
     >
       <div className="card" style={{ padding: "48px", maxWidth: 460, width: "100%" }}>
+        <div style={{ marginBottom: 22 }}>
+          <Logo size={34} iconOnly />
+        </div>
         <div className="eyebrow" style={{ marginBottom: 22 }}>
           Overenie pravosti
         </div>

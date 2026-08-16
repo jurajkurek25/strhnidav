@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCertificateById } from "@/lib/certificate";
+import { Logo } from "@/components/Logo";
 
 const dateFormatter = new Intl.DateTimeFormat("sk-SK", {
   day: "numeric",
@@ -30,6 +31,9 @@ export default async function CertifikatResultPage({
       }}
     >
       <div className="card" style={{ padding: "48px", maxWidth: 480, width: "100%" }}>
+        <div style={{ marginBottom: 22 }}>
+          <Logo size={34} iconOnly />
+        </div>
         <div className="eyebrow" style={{ marginBottom: 22 }}>
           Overenie pravosti
         </div>
