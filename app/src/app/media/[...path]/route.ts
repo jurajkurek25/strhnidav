@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { readStorageFile, contentTypeFor } from "@/lib/storage";
 import { verifyCastToken } from "@/lib/cast-token";
+import { CAST_CORS_HEADERS } from "@/lib/cors";
 
 const CAST_PLAYLIST_RE = /^hls\/([^/]+)\/cast\.m3u8$/;
+
+export function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CAST_CORS_HEADERS });
+}
 
 // Public, unauthenticated file serving — only ever used for the encrypted
 // HLS video segments/playlist (useless without the key served by
@@ -20,7 +25,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
   const { path: segments } = await params;
   const relPath = segments.join("/");
   if (relPath.includes("..")) {
-    return new NextResponse("not found", { status: 404 });
+    return new NextResponse("not found", { status: 404, headers: CAST_CORS_HEADERS });
   }
 
   const castMatch = relPath.match(CAST_PLAYLIST_RE);
@@ -28,11 +33,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
     const lessonId = castMatch[1];
     const token = new URL(request.url).searchParams.get("token");
     if (!token || !verifyCastToken(token, lessonId)) {
-      return new NextResponse("unauthorized", { status: 401 });
+      return new NextResponse("unauthorized", { status: 401, headers: CAST_CORS_HEADERS });
     }
 
     const playlist = await readStorageFile(`public/hls/${lessonId}/playlist.m3u8`);
-    if (!playlist) return new NextResponse("not found", { status: 404 });
+    if (!playlist) return new NextResponse("not found", { status: 404, headers: CAST_CORS_HEADERS });
 
     const rewritten = playlist
       .toString("utf8")
@@ -45,17 +50,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
       headers: {
         "Content-Type": "application/vnd.apple.mpegurl",
         "Cache-Control": "no-store",
+        ...CAST_CORS_HEADERS,
       },
     });
   }
 
   const data = await readStorageFile(`public/${relPath}`);
-  if (!data) return new NextResponse("not found", { status: 404 });
+  if (!data) return new NextResponse("not found", { status: 404, headers: CAST_CORS_HEADERS });
 
   return new NextResponse(new Uint8Array(data), {
     headers: {
       "Content-Type": contentTypeFor(relPath),
       "Cache-Control": "public, max-age=3600",
+      ...CAST_CORS_HEADERS,
     },
   });
 }
