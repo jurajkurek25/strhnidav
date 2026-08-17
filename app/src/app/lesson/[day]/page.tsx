@@ -34,7 +34,7 @@ export default async function LessonPage({
 
   const profile = await requireProfile();
 
-  const states = await getLessonStatesForUser(profile.id, profile.hasFullAccess);
+  const states = await getLessonStatesForUser(profile.id, profile.effectiveFullAccess);
   const byDay = statesByDayNumber(states);
   const entry = byDay.get(dayNumber);
   if (!entry) notFound();
@@ -48,7 +48,7 @@ export default async function LessonPage({
       name={profile.fullName}
       avatarUrl={profile.avatarUrl}
       isAdmin={profile.isAdmin}
-      hasFullAccess={profile.hasFullAccess}
+      hasFullAccess={profile.effectiveFullAccess}
     />
   );
 

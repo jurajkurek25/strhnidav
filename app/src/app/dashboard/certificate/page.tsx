@@ -9,15 +9,15 @@ import { CertificatePrintButton } from "@/components/CertificatePrintButton";
 
 export default async function CertificatePage() {
   const profile = await requireProfile();
-  const states = await getLessonStatesForUser(profile.id, profile.hasFullAccess);
+  const states = await getLessonStatesForUser(profile.id, profile.effectiveFullAccess);
   const completedCount = states.filter((s) => s.state === "completed").length;
-  const eligible = profile.hasFullAccess && states.length > 0 && completedCount === states.length;
+  const eligible = profile.effectiveFullAccess && states.length > 0 && completedCount === states.length;
 
   const headerProps = {
     name: profile.fullName,
     avatarUrl: profile.avatarUrl,
     isAdmin: profile.isAdmin,
-    hasFullAccess: profile.hasFullAccess,
+    hasFullAccess: profile.effectiveFullAccess,
   };
 
   if (!eligible) {
@@ -33,7 +33,7 @@ export default async function CertificatePage() {
             <p className="mt-6 text-[15px] leading-relaxed text-muted">
               Máš splnených <b className="text-gold-bright">{completedCount}</b> / {states.length}{" "}
               lekcií
-              {!profile.hasFullAccess && " a ešte nemáš plný prístup k celému kurzu"}. Certifikát o
+              {!profile.effectiveFullAccess && " a ešte nemáš plný prístup k celému kurzu"}. Certifikát o
               absolvovaní sa automaticky vygeneruje, keď dokončíš úplne poslednú lekciu.
             </p>
             <Link href="/dashboard" className="btn mt-10 inline-flex">

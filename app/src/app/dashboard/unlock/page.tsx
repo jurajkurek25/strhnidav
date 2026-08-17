@@ -3,7 +3,7 @@ import { asc, and, eq } from "drizzle-orm";
 import { requireProfile } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sections, lessons, sectionPurchases } from "@/lib/db/schema";
-import { COURSE_PRICE_EUR, BLOCK_PRICE_EUR } from "@/lib/stripe";
+import { COURSE_PRICE_EUR, BLOCK_PRICE_EUR, SUBSCRIPTION_PRICE_EUR } from "@/lib/stripe";
 import { Header } from "@/components/Header";
 import { UnlockOptions } from "@/components/UnlockOptions";
 
@@ -15,7 +15,7 @@ export default async function UnlockPage({
   const profile = await requireProfile();
   const { status } = await searchParams;
 
-  if (profile.hasFullAccess) redirect("/dashboard");
+  if (profile.effectiveFullAccess) redirect("/dashboard");
 
   const [allSections, allLessons, purchases] = await Promise.all([
     db.select().from(sections).orderBy(asc(sections.orderIndex)),
@@ -51,7 +51,7 @@ export default async function UnlockPage({
         name={profile.fullName}
         avatarUrl={profile.avatarUrl}
         isAdmin={profile.isAdmin}
-        hasFullAccess={profile.hasFullAccess}
+        hasFullAccess={profile.effectiveFullAccess}
       />
       <main className="wrap py-24">
         <div className="eyebrow mb-6">Vstup do kurzu</div>
@@ -65,7 +65,12 @@ export default async function UnlockPage({
           </p>
         )}
 
-        <UnlockOptions blocks={blocks} coursePriceEur={COURSE_PRICE_EUR} blockPriceEur={BLOCK_PRICE_EUR} />
+        <UnlockOptions
+          blocks={blocks}
+          coursePriceEur={COURSE_PRICE_EUR}
+          blockPriceEur={BLOCK_PRICE_EUR}
+          subscriptionPriceEur={SUBSCRIPTION_PRICE_EUR}
+        />
       </main>
     </>
   );

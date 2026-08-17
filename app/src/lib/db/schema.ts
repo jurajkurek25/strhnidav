@@ -14,6 +14,15 @@ import {
 export type TaskType = "text" | "image" | "pdf" | "self_check";
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 export type PaymentStatus = "pending" | "paid" | "failed";
+export type SubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "unpaid"
+  | "canceled"
+  | "incomplete"
+  | "incomplete_expired"
+  | "paused";
 
 // One row per signed-in person. Replaces Supabase's auth.users + profiles
 // split — google_id is the OAuth identity, id is our own internal PK that
@@ -174,6 +183,30 @@ export const payments = pgTable("payments", {
   // that the digital-content withdrawal-right exception was invoked.
   withdrawalConsentAt: timestamp("withdrawal_consent_at", { withTimezone: true }),
 });
+
+// One row per Stripe subscription a person has ever had — the recurring
+// 29,90 €/month alternative to a one-time `payments` row. Full access
+// (profiles.hasFullAccess) is kept in sync with whichever row here is
+// currently "active"/"trialing" by the webhook (see
+// src/app/api/stripe/webhook/route.ts) — this table is the source of
+// truth that sync is computed from, so it's never blown away just because
+// a subscription lapses.
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    stripeCustomerId: text("stripe_customer_id").notNull(),
+    stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+    status: text("status").$type<SubscriptionStatus>().notNull(),
+    amountCents: integer("amount_cents").notNull().default(2990),
+    currency: text("currency").notNull().default("eur"),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("subscriptions_user_idx").on(t.userId)]
+);
 
 // Deliberately never read from client code or exposed in any API response
 // beyond /api/video-key/[lessonId] (after its own auth + gating check) —

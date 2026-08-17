@@ -31,24 +31,26 @@ export function UnlockOptions({
   blocks,
   coursePriceEur,
   blockPriceEur,
+  subscriptionPriceEur,
 }: {
   blocks: Block[];
   coursePriceEur: number;
   blockPriceEur: number;
+  subscriptionPriceEur: number;
 }) {
   const [consent, setConsent] = useState(false);
-  // "course" | a section id | null
+  // "course" | "subscription" | a section id | null
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function startCheckout(id: string, sectionId?: string) {
+  async function startCheckout(id: string, extra?: { sectionId?: string; plan?: "subscription" }) {
     setLoadingId(id);
     setError(null);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consent: true, ...(sectionId ? { sectionId } : {}) }),
+        body: JSON.stringify({ consent: true, ...extra }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error ?? "Platbu sa nepodarilo spustiť.");
@@ -93,6 +95,27 @@ export function UnlockOptions({
         </button>
       </div>
 
+      <div className="card mt-6 grid gap-8 p-10 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <div className="eyebrow mb-4">Alebo mesačne</div>
+          <p className="font-display text-[30px] font-semibold leading-none text-gold-bright">
+            {subscriptionPriceEur.toFixed(2).replace(".", ",")}
+            <span className="ml-2 font-body text-[15px] font-medium text-muted">€ / mesiac</span>
+          </p>
+          <p className="mt-4 max-w-[52ch] text-[14.5px] leading-relaxed text-muted">
+            Nemáš {coursePriceEur} € naraz? Plať postupne, mesiac po mesiaci — rovnaký obsah,
+            rovnaké tempo (jedna lekcia denne), zrušiteľné kedykoľvek.
+          </p>
+        </div>
+        <button
+          onClick={() => startCheckout("subscription", { plan: "subscription" })}
+          disabled={loadingId !== null || !consent}
+          className="btn btn-ghost shrink-0"
+        >
+          {loadingId === "subscription" ? "Presmerúvam…" : "Predplatiť"}
+        </button>
+      </div>
+
       {purchasableBlocks.length > 0 && (
         <div className="mt-16">
           <div className="eyebrow mb-6">Alebo po jednotlivých blokoch</div>
@@ -121,7 +144,7 @@ export function UnlockOptions({
                     {blockPriceEur} €
                   </span>
                   <button
-                    onClick={() => startCheckout(block.id, block.id)}
+                    onClick={() => startCheckout(block.id, { sectionId: block.id })}
                     disabled={loadingId !== null || !consent}
                     className="btn btn-sm"
                   >

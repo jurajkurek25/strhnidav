@@ -3,7 +3,53 @@ import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { profiles, payments, sectionPurchases } from "@/lib/db/schema";
+import { profiles, payments, sectionPurchases, subscriptions, type SubscriptionStatus } from "@/lib/db/schema";
+
+function customerId(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): string | null {
+  if (!customer) return null;
+  return typeof customer === "string" ? customer : customer.id;
+}
+
+// Subscription webhook events carry no checkout-session metadata of their
+// own — the user_id we stamped onto subscription_data.metadata at checkout
+// time is the primary source, with our own table as a fallback for events
+// that somehow arrive before that metadata is visible.
+async function userIdForSubscription(subscription: Stripe.Subscription): Promise<string | null> {
+  if (subscription.metadata?.user_id) return subscription.metadata.user_id;
+  const [row] = await db
+    .select({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+  return row?.userId ?? null;
+}
+
+async function upsertSubscriptionRow(subscription: Stripe.Subscription, status: SubscriptionStatus) {
+  const userId = await userIdForSubscription(subscription);
+  const custId = customerId(subscription.customer);
+  if (!userId || !custId) return;
+
+  const item = subscription.items.data[0];
+
+  await db
+    .insert(subscriptions)
+    .values({
+      userId,
+      stripeCustomerId: custId,
+      stripeSubscriptionId: subscription.id,
+      status,
+      amountCents: item?.price.unit_amount ?? 2990,
+      currency: subscription.currency,
+      currentPeriodEnd: item ? new Date(item.current_period_end * 1000) : null,
+    })
+    .onConflictDoUpdate({
+      target: subscriptions.stripeSubscriptionId,
+      set: {
+        status,
+        currentPeriodEnd: item ? new Date(item.current_period_end * 1000) : null,
+        updatedAt: new Date(),
+      },
+    });
+}
 
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
@@ -26,7 +72,25 @@ export async function POST(request: Request) {
     const userId = session.client_reference_id ?? session.metadata?.user_id;
     const sectionId = session.metadata?.section_id;
 
-    if (userId && sectionId) {
+    if (session.mode === "subscription" && userId && typeof session.subscription === "string") {
+      const custId = customerId(session.customer);
+      if (custId) {
+        await db
+          .insert(subscriptions)
+          .values({
+            userId,
+            stripeCustomerId: custId,
+            stripeSubscriptionId: session.subscription,
+            status: "active",
+            amountCents: session.amount_total ?? 2990,
+            currency: session.currency ?? "eur",
+          })
+          .onConflictDoUpdate({
+            target: subscriptions.stripeSubscriptionId,
+            set: { status: "active", stripeCustomerId: custId, updatedAt: new Date() },
+          });
+      }
+    } else if (userId && sectionId) {
       await db
         .insert(sectionPurchases)
         .values({
@@ -69,6 +133,21 @@ export async function POST(request: Request) {
           set: { status: "paid" },
         });
     }
+  }
+
+  // Keeps our subscriptions table (the only thing subscription-derived
+  // access is computed from — see src/lib/subscriptions.ts) in sync with
+  // Stripe's view of the world: renewals, failed payments, and
+  // cancellations all land here. Deliberately never touches
+  // profiles.hasFullAccess directly.
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object as Stripe.Subscription;
+    await upsertSubscriptionRow(subscription, subscription.status as SubscriptionStatus);
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object as Stripe.Subscription;
+    await upsertSubscriptionRow(subscription, "canceled");
   }
 
   return NextResponse.json({ received: true });

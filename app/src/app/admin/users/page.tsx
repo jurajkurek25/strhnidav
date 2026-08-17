@@ -1,7 +1,7 @@
-import { desc } from "drizzle-orm";
+import { desc, eq, or } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { profiles, freeAccessGrants } from "@/lib/db/schema";
+import { profiles, freeAccessGrants, subscriptions } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
 import { setUserAccess, addFreeAccessGrant, removeFreeAccessGrant } from "@/app/admin/actions";
@@ -9,12 +9,17 @@ import { setUserAccess, addFreeAccessGrant, removeFreeAccessGrant } from "@/app/
 export default async function AdminUsersPage() {
   const profile = await requireAdmin();
 
-  const [users, grants] = await Promise.all([
+  const [users, grants, activeSubs] = await Promise.all([
     db.select().from(profiles).orderBy(desc(profiles.createdAt)),
     db.select().from(freeAccessGrants).orderBy(desc(freeAccessGrants.createdAt)),
+    db
+      .select({ userId: subscriptions.userId })
+      .from(subscriptions)
+      .where(or(eq(subscriptions.status, "active"), eq(subscriptions.status, "trialing"))),
   ]);
 
   const registeredEmails = new Set(users.map((u) => u.email.toLowerCase()));
+  const subscribedUserIds = new Set(activeSubs.map((s) => s.userId));
 
   return (
     <>
@@ -88,13 +93,18 @@ export default async function AdminUsersPage() {
                     {u.createdAt.toLocaleDateString("sk-SK")}
                   </td>
                   <td className="px-6 py-4">
-                    {u.isAdmin ? (
-                      <span className="tag tag-good">admin</span>
-                    ) : u.hasFullAccess ? (
-                      <span className="tag tag-good">plný kurz</span>
-                    ) : (
-                      <span className="tag tag-muted">7 lekcií zadarmo</span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {u.isAdmin ? (
+                        <span className="tag tag-good">admin</span>
+                      ) : u.hasFullAccess ? (
+                        <span className="tag tag-good">plný kurz</span>
+                      ) : (
+                        <span className="tag tag-muted">7 lekcií zadarmo</span>
+                      )}
+                      {subscribedUserIds.has(u.id) && (
+                        <span className="tag tag-good">predplatné</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     {!u.isAdmin && (

@@ -3,7 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { profiles, sections, sectionPurchases } from "@/lib/db/schema";
-import { stripe, COURSE_PRICE_EUR, BLOCK_PRICE_EUR } from "@/lib/stripe";
+import { stripe, COURSE_PRICE_EUR, BLOCK_PRICE_EUR, SUBSCRIPTION_PRICE_EUR_CENTS } from "@/lib/stripe";
+import { hasActiveSubscription } from "@/lib/subscriptions";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -15,13 +16,14 @@ export async function POST(request: Request) {
   }
   const sectionId: string | undefined =
     typeof body?.sectionId === "string" ? body.sectionId : undefined;
+  const isSubscription = body?.plan === "subscription";
 
   const [profile] = await db
     .select({ hasFullAccess: profiles.hasFullAccess, email: profiles.email })
     .from(profiles)
     .where(eq(profiles.id, session.user.id));
 
-  if (profile?.hasFullAccess) {
+  if (profile?.hasFullAccess || (await hasActiveSubscription(session.user.id))) {
     return NextResponse.json({ error: "already-purchased" }, { status: 400 });
   }
 
@@ -38,6 +40,42 @@ export async function POST(request: Request) {
     // up here.
     allow_promotion_codes: true,
   };
+
+  if (isSubscription) {
+    const checkoutSession = await stripe.checkout.sessions.create({
+      ...commonFields,
+      mode: "subscription",
+      metadata: {
+        user_id: session.user.id,
+        withdrawal_consent_at: withdrawalConsentAt,
+      },
+      // Copied onto the created Subscription object itself, so later
+      // customer.subscription.updated/deleted webhook events (which carry
+      // no checkout-session metadata of their own) can still be traced back
+      // to a user even before our own `subscriptions` row exists.
+      subscription_data: {
+        metadata: { user_id: session.user.id },
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "eur",
+            unit_amount: SUBSCRIPTION_PRICE_EUR_CENTS,
+            recurring: { interval: "month" },
+            product_data: {
+              name: "Strhni Dav — mesačné predplatné",
+              description: "Prístup ku kurzu, dokým je predplatné aktívne. Zrušiteľné kedykoľvek.",
+            },
+          },
+        },
+      ],
+      success_url: `${siteUrl}/dashboard?purchase=success`,
+      cancel_url: `${siteUrl}/dashboard/unlock?status=cancelled`,
+    });
+
+    return NextResponse.json({ url: checkoutSession.url });
+  }
 
   if (sectionId) {
     const [section] = await db.select().from(sections).where(eq(sections.id, sectionId));

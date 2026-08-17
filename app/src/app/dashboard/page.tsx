@@ -3,15 +3,18 @@ import { requireProfile } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sections } from "@/lib/db/schema";
 import { getLessonStatesForUser } from "@/lib/course";
+import { stripeCustomerIdForUser } from "@/lib/subscriptions";
 import { Header } from "@/components/Header";
 import { LessonGridCard } from "@/components/LessonGridCard";
+import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
 
-  const [allSections, states] = await Promise.all([
+  const [allSections, states, stripeCustomerId] = await Promise.all([
     db.select().from(sections).orderBy(asc(sections.orderIndex)),
-    getLessonStatesForUser(profile.id, profile.hasFullAccess),
+    getLessonStatesForUser(profile.id, profile.effectiveFullAccess),
+    stripeCustomerIdForUser(profile.id),
   ]);
 
   const sectionById = new Map(allSections.map((s) => [s.id, s]));
@@ -32,7 +35,7 @@ export default async function DashboardPage() {
 
   const orderedGroups = [...groups.values()].sort((a, b) => a.order - b.order);
   const completedCount = states.filter((s) => s.state === "completed").length;
-  const courseCompleted = profile.hasFullAccess && states.length > 0 && completedCount === states.length;
+  const courseCompleted = profile.effectiveFullAccess && states.length > 0 && completedCount === states.length;
 
   return (
     <>
@@ -40,7 +43,7 @@ export default async function DashboardPage() {
         name={profile.fullName}
         avatarUrl={profile.avatarUrl}
         isAdmin={profile.isAdmin}
-        hasFullAccess={profile.hasFullAccess}
+        hasFullAccess={profile.effectiveFullAccess}
       />
       <main className="wrap py-20">
         <div className="eyebrow mb-6">Členská sekcia</div>
@@ -49,17 +52,23 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-6 text-[15px] leading-relaxed text-muted">
           Splnené <b className="text-gold-bright">{completedCount}</b> / {states.length} lekcií.
-          {!profile.hasFullAccess && (
+          {!profile.effectiveFullAccess && (
             <>
               {" "}
               Prvých 7 lekcií máš zadarmo — potom odomkneš{" "}
               <a href="/dashboard/unlock" className="text-gold-bright underline">
-                celý kurz za 299 €, alebo jednotlivé bloky po 99 €
+                celý kurz za 299 €, jednotlivé bloky po 99 €, alebo mesačné predplatné za 29,90 €
               </a>
               .
             </>
           )}
         </p>
+
+        {stripeCustomerId && (
+          <div className="mt-5">
+            <ManageSubscriptionButton />
+          </div>
+        )}
 
         {courseCompleted && (
           <div className="card mt-10 flex flex-wrap items-center justify-between gap-6 p-8">
