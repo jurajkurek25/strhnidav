@@ -32,6 +32,11 @@ export async function POST(request: Request) {
     mode: "payment" as const,
     client_reference_id: session.user.id,
     customer_email: profile?.email ?? session.user.email ?? undefined,
+    // Shows a "Add promotion code" field on the Stripe-hosted checkout page.
+    // Codes themselves are created/managed in the Stripe Dashboard
+    // (Product catalog → Coupons / Promotion codes) — nothing else to wire
+    // up here.
+    allow_promotion_codes: true,
   };
 
   if (sectionId) {
