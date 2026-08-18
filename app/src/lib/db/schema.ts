@@ -39,14 +39,20 @@ export const profiles = pgTable("profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Single-row table (id is always true) holding the full-course price —
-// admin-editable from /admin/sections, read by the checkout route instead
-// of a hardcoded constant. Existing `payments` rows keep the amount
-// actually paid at the time (see amountCents there), unaffected by later
-// edits here.
+// Single-row table (id is always true) holding the full-course price and
+// the monthly subscription price — both admin-editable from
+// /admin/sections, read by the checkout route instead of hardcoded
+// constants. The two are intentionally independent (not derived from one
+// another): the one-time price is what a lifetime-access buyer pays
+// regardless of course length, while the subscription's *effective* total
+// cost already grows on its own as more content is added, since lessons
+// unlock one per day and can't be rushed through. Existing `payments` /
+// `subscriptions` rows keep the amount actually paid at the time (see
+// amountCents on those tables), unaffected by later edits here.
 export const courseSettings = pgTable("course_settings", {
   id: boolean("id").primaryKey().default(true),
   priceCents: integer("price_cents").notNull().default(29900),
+  subscriptionPriceCents: integer("subscription_price_cents").notNull().default(2990),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

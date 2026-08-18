@@ -103,18 +103,29 @@ export async function updateSectionMeta(id: string, formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-// Full-course price — the courseSettings table always has exactly one row
-// (id = true), so this is an update, never an insert; the row is seeded by
-// migration 0008_course_settings.sql.
-export async function updateCoursePrice(formData: FormData) {
+// Full-course price and monthly subscription price — independent fields
+// (deliberately not derived from one another, see the comment on
+// courseSettings in src/lib/db/schema.ts). The table always has exactly
+// one row (id = true), so this is always an update, never an insert; the
+// row is seeded by migration 0008_course_settings.sql.
+export async function updateCourseSettings(formData: FormData) {
   await requireAdmin();
 
   const priceEur = Number(formData.get("price_eur"));
-  if (!Number.isFinite(priceEur) || priceEur < 0) return;
+  const subscriptionPriceEur = Number(formData.get("subscription_price_eur"));
+
+  const patch: { priceCents?: number; subscriptionPriceCents?: number } = {};
+  if (Number.isFinite(priceEur) && priceEur >= 0) {
+    patch.priceCents = Math.round(priceEur * 100);
+  }
+  if (Number.isFinite(subscriptionPriceEur) && subscriptionPriceEur >= 0) {
+    patch.subscriptionPriceCents = Math.round(subscriptionPriceEur * 100);
+  }
+  if (Object.keys(patch).length === 0) return;
 
   await db
     .update(courseSettings)
-    .set({ priceCents: Math.round(priceEur * 100), updatedAt: new Date() })
+    .set({ ...patch, updatedAt: new Date() })
     .where(eq(courseSettings.id, true));
 
   revalidatePath("/admin/sections");

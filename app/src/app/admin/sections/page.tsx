@@ -5,7 +5,7 @@ import { sections, lessons, courseSettings } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
 import { SortableSections } from "@/components/admin/SortableSections";
-import { createSection, updateCoursePrice } from "@/app/admin/actions";
+import { createSection, updateCourseSettings } from "@/app/admin/actions";
 
 export default async function AdminSectionsPage() {
   const profile = await requireAdmin();
@@ -23,7 +23,10 @@ export default async function AdminSectionsPage() {
       .leftJoin(lessons, eq(lessons.sectionId, sections.id))
       .groupBy(sections.id)
       .orderBy(asc(sections.orderIndex)),
-    db.select({ priceCents: courseSettings.priceCents }).from(courseSettings).where(eq(courseSettings.id, true)),
+    db
+      .select({ priceCents: courseSettings.priceCents, subscriptionPriceCents: courseSettings.subscriptionPriceCents })
+      .from(courseSettings)
+      .where(eq(courseSettings.id, true)),
   ]);
 
   return (
@@ -34,7 +37,7 @@ export default async function AdminSectionsPage() {
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Sekcie kurzu</h1>
         <AdminNav active="/admin/sections" />
 
-        <form action={updateCoursePrice} className="card mb-10 flex flex-wrap items-end gap-3 p-6">
+        <form action={updateCourseSettings} className="card mb-10 flex flex-wrap items-end gap-3 p-6">
           <label className="flex flex-col gap-1.5 text-xs text-muted">
             Cena celého kurzu (€)
             <input
@@ -46,8 +49,19 @@ export default async function AdminSectionsPage() {
               className="!w-32 !py-2.5 !px-3 !text-sm"
             />
           </label>
+          <label className="flex flex-col gap-1.5 text-xs text-muted">
+            Cena predplatného (€ / mesiac)
+            <input
+              type="number"
+              name="subscription_price_eur"
+              step="0.01"
+              min="0"
+              defaultValue={((course?.subscriptionPriceCents ?? 2990) / 100).toFixed(2)}
+              className="!w-32 !py-2.5 !px-3 !text-sm"
+            />
+          </label>
           <button type="submit" className="btn btn-ghost btn-sm">
-            Uložiť cenu kurzu
+            Uložiť ceny
           </button>
         </form>
 

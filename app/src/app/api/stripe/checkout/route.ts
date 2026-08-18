@@ -3,9 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { profiles, sections, sectionPurchases } from "@/lib/db/schema";
-import { stripe, SUBSCRIPTION_PRICE_EUR_CENTS } from "@/lib/stripe";
+import { stripe } from "@/lib/stripe";
 import { hasActiveSubscription } from "@/lib/subscriptions";
-import { getCoursePriceCents } from "@/lib/course-settings";
+import { getCoursePriceCents, getSubscriptionPriceCents } from "@/lib/course-settings";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           quantity: 1,
           price_data: {
             currency: "eur",
-            unit_amount: SUBSCRIPTION_PRICE_EUR_CENTS,
+            unit_amount: await getSubscriptionPriceCents(),
             recurring: { interval: "month" },
             product_data: {
               name: "Strhni Dav — mesačné predplatné",
