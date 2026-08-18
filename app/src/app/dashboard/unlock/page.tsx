@@ -3,7 +3,7 @@ import { asc, and, eq } from "drizzle-orm";
 import { requireProfile } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sections, lessons, sectionPurchases } from "@/lib/db/schema";
-import { COURSE_PRICE_EUR, BLOCK_PRICE_EUR, SUBSCRIPTION_PRICE_EUR } from "@/lib/stripe";
+import { COURSE_PRICE_EUR, SUBSCRIPTION_PRICE_EUR } from "@/lib/stripe";
 import { Header } from "@/components/Header";
 import { UnlockOptions } from "@/components/UnlockOptions";
 
@@ -38,6 +38,7 @@ export default async function UnlockPage({
         id: section.id,
         title: section.title,
         description: section.description,
+        priceEur: section.priceCents / 100,
         lessonCount: sectionLessons.length,
         purchasable: sectionLessons.some((l) => !l.isFree),
         purchased: purchasedSectionIds.has(section.id),
@@ -68,7 +69,6 @@ export default async function UnlockPage({
         <UnlockOptions
           blocks={blocks}
           coursePriceEur={COURSE_PRICE_EUR}
-          blockPriceEur={BLOCK_PRICE_EUR}
           subscriptionPriceEur={SUBSCRIPTION_PRICE_EUR}
         />
       </main>

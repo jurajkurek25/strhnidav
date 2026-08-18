@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { profiles, sections, sectionPurchases } from "@/lib/db/schema";
-import { stripe, COURSE_PRICE_EUR, BLOCK_PRICE_EUR, SUBSCRIPTION_PRICE_EUR_CENTS } from "@/lib/stripe";
+import { stripe, COURSE_PRICE_EUR, SUBSCRIPTION_PRICE_EUR_CENTS } from "@/lib/stripe";
 import { hasActiveSubscription } from "@/lib/subscriptions";
 
 export async function POST(request: Request) {
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
           quantity: 1,
           price_data: {
             currency: "eur",
-            unit_amount: BLOCK_PRICE_EUR * 100,
+            unit_amount: section.priceCents,
             product_data: {
               name: `Strhni Dav — blok „${section.title}“`,
               description: "Doživotný prístup ku všetkým lekciám tohto bloku.",

@@ -14,6 +14,8 @@ export default async function AdminSectionsPage() {
       id: sections.id,
       title: sections.title,
       description: sections.description,
+      priceCents: sections.priceCents,
+      slug: sections.slug,
       lessonCount: count(lessons.id),
     })
     .from(sections)
@@ -35,6 +37,8 @@ export default async function AdminSectionsPage() {
               id: s.id,
               title: s.title,
               description: s.description,
+              priceCents: s.priceCents,
+              slug: s.slug,
               lessonCount: s.lessonCount,
             }))}
           />

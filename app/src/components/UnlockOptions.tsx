@@ -1,41 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { CONSENT_LABEL } from "@/components/ConsentLabel";
 
 type Block = {
   id: string;
   title: string;
   description: string | null;
+  priceEur: number;
   lessonCount: number;
   purchased: boolean;
 };
 
-const CONSENT_LABEL = (
-  <>
-    Žiadam o okamžité sprístupnenie zakúpených lekcií po úspešnej platbe a beriem na vedomie, že
-    týmto strácam právo na odstúpenie od zmluvy vo vzťahu k lekciám, ktoré si pozriem pred
-    uplynutím 14-dňovej lehoty na odstúpenie (čl. 7{" "}
-    <a
-      href="https://strhnidav.sk/obchodne-podmienky"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="underline hover:text-cream"
-    >
-      Obchodných podmienok
-    </a>
-    ).
-  </>
-);
-
 export function UnlockOptions({
   blocks,
   coursePriceEur,
-  blockPriceEur,
   subscriptionPriceEur,
 }: {
   blocks: Block[];
   coursePriceEur: number;
-  blockPriceEur: number;
   subscriptionPriceEur: number;
 }) {
   const [consent, setConsent] = useState(false);
@@ -133,8 +116,7 @@ export function UnlockOptions({
         <div className="mt-16">
           <div className="eyebrow mb-6">Alebo po jednotlivých blokoch</div>
           <p className="mb-8 max-w-[60ch] text-[15px] leading-relaxed text-muted">
-            Nechceš celý kurz naraz? Kúp si len ten blok, ktorý ťa najviac zaujíma — každý za{" "}
-            {blockPriceEur} €.
+            Nechceš celý kurz naraz? Kúp si len ten blok, ktorý ťa najviac zaujíma.
           </p>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {purchasableBlocks.map((block) => (
@@ -154,7 +136,7 @@ export function UnlockOptions({
                 </div>
                 <div className="mt-auto flex items-center justify-between gap-4 pt-2">
                   <span className="font-display text-[22px] font-semibold text-gold-bright">
-                    {blockPriceEur} €
+                    {block.priceEur % 1 === 0 ? block.priceEur : block.priceEur.toFixed(2).replace(".", ",")} €
                   </span>
                   <button
                     onClick={() => startCheckout(block.id, { sectionId: block.id })}

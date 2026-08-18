@@ -4,9 +4,9 @@ import { Logo } from "@/components/Logo";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
 
   return (
     <main
@@ -40,7 +40,7 @@ export default async function LoginPage({
           Prihlás sa cez Google a odomkni prvých 7 lekcií zadarmo.
         </p>
 
-        <form action={signInWithGoogleAction}>
+        <form action={signInWithGoogleAction.bind(null, next)}>
           <button type="submit" className="btn" style={{ width: "100%" }}>
             <svg width="18" height="18" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
               <path

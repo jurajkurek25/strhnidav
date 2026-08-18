@@ -39,13 +39,27 @@ export const profiles = pgTable("profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const sections = pgTable("sections", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  description: text("description"),
-  orderIndex: integer("order_index").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const sections = pgTable(
+  "sections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    description: text("description"),
+    orderIndex: integer("order_index").notNull().default(0),
+    // Per-block price for individual (section) purchases — admin-editable,
+    // read directly by the checkout route instead of a shared constant, so
+    // each block can be priced on its own. Existing sectionPurchases rows
+    // keep the amount actually paid at the time, unaffected by later edits
+    // here (see amountCents on that table).
+    priceCents: integer("price_cents").notNull().default(9900),
+    // Optional friendly URL for external landing pages to link straight
+    // into a checkout for this one block — /buy/[slug]. Null means no
+    // direct link has been set up for this block yet.
+    slug: text("slug").unique(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sections_slug_idx").on(t.slug)]
+);
 
 export const lessons = pgTable("lessons", {
   id: uuid("id").primaryKey().defaultRandom(),

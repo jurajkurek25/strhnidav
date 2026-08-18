@@ -19,12 +19,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DragHandle } from "@/components/admin/DragHandle";
-import { deleteSection, reorderSections } from "@/app/admin/actions";
+import { deleteSection, reorderSections, updateSectionMeta } from "@/app/admin/actions";
 
 interface SectionItem {
   id: string;
   title: string;
   description: string | null;
+  priceCents: number;
+  slug: string | null;
   lessonCount: number;
 }
 
@@ -37,19 +39,74 @@ function Row({ section }: { section: SectionItem }) {
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
-      className="card flex items-center gap-4 p-6"
+      className="card flex flex-col gap-5 p-6"
     >
-      <DragHandle attributes={attributes} listeners={listeners} />
-      <div className="flex-1">
-        <p className="font-medium text-cream">{section.title}</p>
-        {section.description && <p className="mt-2 text-sm text-muted">{section.description}</p>}
-        <p className="mt-2 text-xs text-muted">{section.lessonCount} lekcií</p>
+      <div className="flex items-center gap-4">
+        <DragHandle attributes={attributes} listeners={listeners} />
+        <p className="min-w-0 flex-1 text-xs text-muted">{section.lessonCount} lekcií</p>
+        <form action={deleteSection.bind(null, section.id)}>
+          <button type="submit" className="btn btn-danger btn-sm">
+            Zmazať
+          </button>
+        </form>
       </div>
-      <form action={deleteSection.bind(null, section.id)}>
-        <button type="submit" className="btn btn-danger btn-sm">
-          Zmazať
-        </button>
+
+      <form
+        action={updateSectionMeta.bind(null, section.id)}
+        className="flex flex-col gap-3 border-t border-card-line pt-5"
+      >
+        <label className="flex flex-col gap-1.5 text-xs text-muted">
+          Názov bloku
+          <input
+            type="text"
+            name="title"
+            required
+            defaultValue={section.title}
+            className="!py-2.5 !px-3 !text-sm font-medium"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs text-muted">
+          Popis
+          <textarea
+            name="description"
+            defaultValue={section.description ?? ""}
+            rows={2}
+            className="!py-2.5 !px-3 !text-sm"
+          />
+        </label>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1.5 text-xs text-muted">
+            Cena bloku (€)
+            <input
+              type="number"
+              name="price_eur"
+              step="0.01"
+              min="0"
+              defaultValue={(section.priceCents / 100).toFixed(2)}
+              className="!w-28 !py-2.5 !px-3 !text-sm"
+            />
+          </label>
+          <label className="flex min-w-[200px] flex-1 flex-col gap-1.5 text-xs text-muted">
+            Priamy odkaz (/buy/…)
+            <input
+              type="text"
+              name="slug"
+              defaultValue={section.slug ?? ""}
+              placeholder="napr. randenie-pre-muzov"
+              className="!py-2.5 !px-3 !text-sm"
+            />
+          </label>
+          <button type="submit" className="btn btn-ghost btn-sm">
+            Uložiť
+          </button>
+        </div>
       </form>
+
+      {section.slug && (
+        <p className="text-xs text-muted">
+          Priamy odkaz: <code className="text-gold-bright">kurz.strhnidav.sk/buy/{section.slug}</code>
+        </p>
+      )}
     </li>
   );
 }

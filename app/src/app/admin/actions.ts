@@ -17,11 +17,30 @@ import {
 import { uploadPrivateFile } from "@/lib/media";
 import { writeStorageFile, deleteStorageDir, sanitizeFilename } from "@/lib/storage";
 import { packageLessonVideoAsEncryptedHls } from "@/lib/hls";
+import { slugify } from "@/lib/slug";
 import type { TaskType } from "@/lib/db/schema";
 
 // ---------------------------------------------------------------------------
 // sections
 // ---------------------------------------------------------------------------
+
+// Appends -2, -3, ... until the slug is free. excludeId lets an existing
+// section keep its own current slug when it isn't actually changing.
+async function uniqueSlug(base: string, excludeId?: string): Promise<string | null> {
+  const root = slugify(base);
+  if (!root) return null;
+
+  for (let suffix = 0; suffix < 50; suffix++) {
+    const candidate = suffix === 0 ? root : `${root}-${suffix + 1}`;
+    const [existing] = await db
+      .select({ id: sections.id })
+      .from(sections)
+      .where(eq(sections.slug, candidate));
+    if (!existing || existing.id === excludeId) return candidate;
+  }
+  return null;
+}
+
 export async function createSection(formData: FormData) {
   await requireAdmin();
 
@@ -30,10 +49,57 @@ export async function createSection(formData: FormData) {
   if (!title) return;
 
   const [{ value: sectionCount }] = await db.select({ value: count() }).from(sections);
+  const slug = await uniqueSlug(title);
 
-  await db.insert(sections).values({ title, description, orderIndex: sectionCount });
+  await db.insert(sections).values({ title, description, orderIndex: sectionCount, slug });
 
   revalidatePath("/admin/sections");
+}
+
+// Title, description, price and the /buy/[slug] link, all edited inline in
+// the admin sections list. A slug that's already taken by another section is
+// silently ignored (everything else still saves) rather than throwing — this
+// is a lightweight inline form, not a full page, so there's nowhere good to
+// surface a validation error; the admin sees the old slug is still there and
+// can pick another.
+export async function updateSectionMeta(id: string, formData: FormData) {
+  await requireAdmin();
+
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const priceEur = Number(formData.get("price_eur"));
+  const rawSlug = String(formData.get("slug") ?? "").trim();
+
+  const patch: { title?: string; description?: string | null; priceCents?: number; slug?: string | null } = {};
+
+  if (title) {
+    patch.title = title;
+  }
+  patch.description = description;
+
+  if (Number.isFinite(priceEur) && priceEur >= 0) {
+    patch.priceCents = Math.round(priceEur * 100);
+  }
+
+  if (rawSlug === "") {
+    patch.slug = null;
+  } else {
+    const normalized = slugify(rawSlug);
+    const [existing] = await db
+      .select({ id: sections.id })
+      .from(sections)
+      .where(eq(sections.slug, normalized));
+    if (normalized && (!existing || existing.id === id)) {
+      patch.slug = normalized;
+    }
+  }
+
+  if (Object.keys(patch).length > 0) {
+    await db.update(sections).set(patch).where(eq(sections.id, id));
+  }
+
+  revalidatePath("/admin/sections");
+  revalidatePath("/dashboard");
 }
 
 export async function deleteSection(id: string) {
