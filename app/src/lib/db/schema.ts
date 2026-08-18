@@ -39,6 +39,17 @@ export const profiles = pgTable("profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Single-row table (id is always true) holding the full-course price —
+// admin-editable from /admin/sections, read by the checkout route instead
+// of a hardcoded constant. Existing `payments` rows keep the amount
+// actually paid at the time (see amountCents there), unaffected by later
+// edits here.
+export const courseSettings = pgTable("course_settings", {
+  id: boolean("id").primaryKey().default(true),
+  priceCents: integer("price_cents").notNull().default(29900),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const sections = pgTable(
   "sections",
   {

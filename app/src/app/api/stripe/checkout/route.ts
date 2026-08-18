@@ -3,8 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { profiles, sections, sectionPurchases } from "@/lib/db/schema";
-import { stripe, COURSE_PRICE_EUR, SUBSCRIPTION_PRICE_EUR_CENTS } from "@/lib/stripe";
+import { stripe, SUBSCRIPTION_PRICE_EUR_CENTS } from "@/lib/stripe";
 import { hasActiveSubscription } from "@/lib/subscriptions";
+import { getCoursePriceCents } from "@/lib/course-settings";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -122,8 +123,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: checkoutSession.url });
   }
 
-  const priceId = process.env.STRIPE_PRICE_ID;
-
   const checkoutSession = await stripe.checkout.sessions.create({
     ...commonFields,
     metadata: {
@@ -133,19 +132,17 @@ export async function POST(request: Request) {
       withdrawal_consent_at: withdrawalConsentAt,
     },
     line_items: [
-      priceId
-        ? { price: priceId, quantity: 1 }
-        : {
-            quantity: 1,
-            price_data: {
-              currency: "eur",
-              unit_amount: COURSE_PRICE_EUR * 100,
-              product_data: {
-                name: "Strhni Dav — celý kurz",
-                description: "Doživotný prístup ku všetkým lekciám kurzu.",
-              },
-            },
+      {
+        quantity: 1,
+        price_data: {
+          currency: "eur",
+          unit_amount: await getCoursePriceCents(),
+          product_data: {
+            name: "Strhni Dav — celý kurz",
+            description: "Doživotný prístup ku všetkým lekciám kurzu.",
           },
+        },
+      },
     ],
     success_url: `${siteUrl}/dashboard?purchase=success`,
     cancel_url: `${siteUrl}/dashboard/unlock?status=cancelled`,

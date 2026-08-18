@@ -3,7 +3,8 @@ import { asc, and, eq } from "drizzle-orm";
 import { requireProfile } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sections, lessons, sectionPurchases } from "@/lib/db/schema";
-import { COURSE_PRICE_EUR, SUBSCRIPTION_PRICE_EUR } from "@/lib/stripe";
+import { SUBSCRIPTION_PRICE_EUR } from "@/lib/stripe";
+import { getCoursePriceEur } from "@/lib/course-settings";
 import { Header } from "@/components/Header";
 import { UnlockOptions } from "@/components/UnlockOptions";
 
@@ -17,13 +18,14 @@ export default async function UnlockPage({
 
   if (profile.effectiveFullAccess) redirect("/dashboard");
 
-  const [allSections, allLessons, purchases] = await Promise.all([
+  const [allSections, allLessons, purchases, coursePriceEur] = await Promise.all([
     db.select().from(sections).orderBy(asc(sections.orderIndex)),
     db.select({ sectionId: lessons.sectionId, isFree: lessons.isFree }).from(lessons),
     db
       .select({ sectionId: sectionPurchases.sectionId })
       .from(sectionPurchases)
       .where(and(eq(sectionPurchases.userId, profile.id), eq(sectionPurchases.status, "paid"))),
+    getCoursePriceEur(),
   ]);
 
   const purchasedSectionIds = new Set(purchases.map((p) => p.sectionId));
@@ -68,7 +70,7 @@ export default async function UnlockPage({
 
         <UnlockOptions
           blocks={blocks}
-          coursePriceEur={COURSE_PRICE_EUR}
+          coursePriceEur={coursePriceEur}
           subscriptionPriceEur={SUBSCRIPTION_PRICE_EUR}
         />
       </main>

@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { sections } from "@/lib/db/schema";
 import { getLessonStatesForUser } from "@/lib/course";
 import { stripeCustomerIdForUser } from "@/lib/subscriptions";
+import { getCoursePriceEur } from "@/lib/course-settings";
+import { SUBSCRIPTION_PRICE_EUR } from "@/lib/stripe";
 import { Header } from "@/components/Header";
 import { LessonGridCard } from "@/components/LessonGridCard";
 import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton";
@@ -11,10 +13,11 @@ import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton"
 export default async function DashboardPage() {
   const profile = await requireProfile();
 
-  const [allSections, states, stripeCustomerId] = await Promise.all([
+  const [allSections, states, stripeCustomerId, coursePriceEur] = await Promise.all([
     db.select().from(sections).orderBy(asc(sections.orderIndex)),
     getLessonStatesForUser(profile.id, profile.effectiveFullAccess),
     stripeCustomerIdForUser(profile.id),
+    getCoursePriceEur(),
   ]);
 
   const sectionById = new Map(allSections.map((s) => [s.id, s]));
@@ -57,7 +60,8 @@ export default async function DashboardPage() {
               {" "}
               Prvých 7 lekcií máš zadarmo — potom odomkneš{" "}
               <a href="/dashboard/unlock" className="text-gold-bright underline">
-                celý kurz za 299 €, jednotlivé bloky po 99 €, alebo mesačné predplatné za 29,90 €
+                celý kurz za {coursePriceEur} €, jednotlivé bloky podľa ich ceny, alebo mesačné
+                predplatné za {SUBSCRIPTION_PRICE_EUR.toFixed(2).replace(".", ",")} €
               </a>
               .
             </>

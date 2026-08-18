@@ -13,6 +13,7 @@ import {
   lessonAudio,
   profiles,
   freeAccessGrants,
+  courseSettings,
 } from "@/lib/db/schema";
 import { uploadPrivateFile } from "@/lib/media";
 import { writeStorageFile, deleteStorageDir, sanitizeFilename } from "@/lib/storage";
@@ -100,6 +101,25 @@ export async function updateSectionMeta(id: string, formData: FormData) {
 
   revalidatePath("/admin/sections");
   revalidatePath("/dashboard");
+}
+
+// Full-course price — the courseSettings table always has exactly one row
+// (id = true), so this is an update, never an insert; the row is seeded by
+// migration 0008_course_settings.sql.
+export async function updateCoursePrice(formData: FormData) {
+  await requireAdmin();
+
+  const priceEur = Number(formData.get("price_eur"));
+  if (!Number.isFinite(priceEur) || priceEur < 0) return;
+
+  await db
+    .update(courseSettings)
+    .set({ priceCents: Math.round(priceEur * 100), updatedAt: new Date() })
+    .where(eq(courseSettings.id, true));
+
+  revalidatePath("/admin/sections");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/unlock");
 }
 
 export async function deleteSection(id: string) {

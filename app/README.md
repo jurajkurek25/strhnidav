@@ -99,9 +99,10 @@ stranu.
 
 ## 3. Stripe
 
-1. Vytvor **Product** "Strhni Dav — celý kurz" s jednorazovou cenou 199 €
-   a jeho `price_...` ID daj do `STRIPE_PRICE_ID` (alebo appku nechaj cenu
-   vytvoriť dynamicky — funguje aj bez `STRIPE_PRICE_ID`).
+1. Cenu celého kurzu appka vytvára dynamicky pri každom checkoute podľa
+   hodnoty uloženej v databáze (tabuľka `course_settings`) — nastavíš ju
+   priamo v adminovi na `/admin/sections`, žiadny `price_...` v Stripe
+   Dashboarde netreba zakladať ani konfigurovať.
 2. **Developers → Webhooks** → pridaj endpoint
    `https://<tvoja-domena>/api/stripe/webhook`, event `checkout.session.completed`.
    Skopíruj `whsec_...` do `STRIPE_WEBHOOK_SECRET`.

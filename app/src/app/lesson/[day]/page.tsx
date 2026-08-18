@@ -12,6 +12,7 @@ import {
   profiles,
 } from "@/lib/db/schema";
 import { getLessonStatesForUser, statesByDayNumber } from "@/lib/course";
+import { getCoursePriceEur } from "@/lib/course-settings";
 import { privateFileUrl } from "@/lib/media";
 import { publicHlsPlaylistUrl } from "@/lib/media-urls";
 import { Header } from "@/components/Header";
@@ -53,11 +54,17 @@ export default async function LessonPage({
   );
 
   if (!accessible) {
+    const coursePriceEur = await getCoursePriceEur();
     return (
       <>
         {header}
         <main className="wrap py-16">
-          <LockedLessonView state={entry.state} unlocksAt={entry.unlocksAt} dayNumber={dayNumber} />
+          <LockedLessonView
+            state={entry.state}
+            unlocksAt={entry.unlocksAt}
+            dayNumber={dayNumber}
+            coursePriceEur={coursePriceEur}
+          />
           <div className="mt-8">
             <LessonNav prev={prev} next={next} />
           </div>
