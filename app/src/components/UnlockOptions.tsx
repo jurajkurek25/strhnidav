@@ -65,7 +65,20 @@ export function UnlockOptions({
 
   return (
     <div>
-      <div className="card mt-12 grid gap-12 p-12 md:grid-cols-[1fr_360px] md:items-start">
+      <div className="card mt-12 p-7">
+        <label className="flex items-start gap-3 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-gold"
+          />
+          <span>{CONSENT_LABEL}</span>
+        </label>
+        {error && <p className="mt-3 text-xs text-[#d98d8d]">{error}</p>}
+      </div>
+
+      <div className="card mt-6 grid gap-12 p-12 md:grid-cols-[1fr_360px] md:items-start">
         <div>
           <div className="font-display text-[clamp(48px,6vw,72px)] font-semibold leading-none text-gold-bright">
             {coursePriceEur}
@@ -156,17 +169,6 @@ export function UnlockOptions({
           </div>
         </div>
       )}
-
-      <label className="mt-12 flex items-start gap-3 text-sm text-muted">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-gold"
-        />
-        <span>{CONSENT_LABEL}</span>
-      </label>
-      {error && <p className="mt-3 text-xs text-[#d98d8d]">{error}</p>}
     </div>
   );
 }
