@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { count, eq, inArray } from "drizzle-orm";
+import { asc, count, eq, inArray } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -154,7 +154,7 @@ export async function saveLesson(formData: FormData) {
   await requireAdmin();
 
   const lessonId = String(formData.get("lesson_id") ?? "").trim() || null;
-  const dayNumber = Number(formData.get("day_number"));
+  const requestedDayNumber = Number(formData.get("day_number"));
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
   const sectionId = String(formData.get("section_id") ?? "").trim() || null;
@@ -162,12 +162,11 @@ export async function saveLesson(formData: FormData) {
   const taskPrompt = String(formData.get("task_prompt") ?? "").trim() || null;
   const isFree = formData.get("is_free") === "on";
 
-  if (!title || !Number.isFinite(dayNumber)) {
+  if (!title || !Number.isFinite(requestedDayNumber)) {
     throw new Error("Deň a názov lekcie sú povinné.");
   }
 
   const lessonPatch = {
-    dayNumber,
     title,
     description,
     sectionId,
@@ -181,10 +180,30 @@ export async function saveLesson(formData: FormData) {
   if (id) {
     await db.update(lessons).set(lessonPatch).where(eq(lessons.id, id));
   } else {
-    const [created] = await db.insert(lessons).values(lessonPatch).returning({ id: lessons.id });
+    // day_number is UNIQUE — a brand-new lesson is inserted past the
+    // current end of the sequence first (always a free number), then
+    // moved to whatever position was actually requested below, exactly
+    // like repositioning an existing lesson.
+    const [{ value: lessonCount }] = await db.select({ value: count() }).from(lessons);
+    const [created] = await db
+      .insert(lessons)
+      .values({ ...lessonPatch, dayNumber: lessonCount + 1 })
+      .returning({ id: lessons.id });
     if (!created) throw new Error("Nepodarilo sa vytvoriť lekciu.");
     id = created.id;
   }
+
+  // Move this lesson to the requested day number, renumbering everything
+  // else around it. day_number is UNIQUE, so writing the requested number
+  // directly (as the old code did) throws a Postgres unique-violation the
+  // moment it's already held by another lesson — e.g. editing lesson 3 to
+  // day 8 when a lesson 8 already exists. Instead this is treated exactly
+  // like a drag-and-drop reorder to that position (see renumberLessons).
+  const allLessons = await db.select({ id: lessons.id }).from(lessons).orderBy(asc(lessons.dayNumber));
+  const otherIds = allLessons.map((l) => l.id).filter((otherId) => otherId !== id);
+  const targetIndex = Math.min(Math.max(Math.round(requestedDayNumber) - 1, 0), otherIds.length);
+  const orderedIds = [...otherIds.slice(0, targetIndex), id, ...otherIds.slice(targetIndex)];
+  await renumberLessons(orderedIds);
 
   // Optional new video file replaces the existing one — packaged into
   // AES-128 encrypted HLS (see src/lib/hls.ts) rather than stored raw. This
@@ -281,6 +300,7 @@ export async function saveLesson(formData: FormData) {
 
   revalidatePath("/admin/lessons");
   revalidatePath(`/admin/lessons/${id}`);
+  revalidatePath("/dashboard");
   redirect("/admin/lessons");
 }
 
@@ -297,7 +317,7 @@ export async function deleteLesson(id: string) {
 }
 
 /**
- * Renumbers day_number to match the drag-and-drop order. Two-phase because
+ * Renumbers day_number to match the given order. Two-phase because
  * day_number is UNIQUE — writing final values directly could collide with
  * another lesson's current number mid-sequence. Negative placeholders can
  * never collide with a real (positive) day_number, so phase one always
@@ -305,14 +325,19 @@ export async function deleteLesson(id: string) {
  * Renumbering is safe for gating: progress is keyed by lesson_id, and
  * day_number is only ever used as a sort/display key (src/lib/gating.ts).
  */
-export async function reorderLessons(orderedIds: string[]) {
-  await requireAdmin();
+async function renumberLessons(orderedIds: string[]) {
   await Promise.all(
     orderedIds.map((id, i) => db.update(lessons).set({ dayNumber: -(i + 1) }).where(eq(lessons.id, id)))
   );
   await Promise.all(
     orderedIds.map((id, i) => db.update(lessons).set({ dayNumber: i + 1 }).where(eq(lessons.id, id)))
   );
+}
+
+// Drag-and-drop reordering from the admin lessons grid.
+export async function reorderLessons(orderedIds: string[]) {
+  await requireAdmin();
+  await renumberLessons(orderedIds);
   revalidatePath("/admin/lessons");
   revalidatePath("/dashboard");
 }
