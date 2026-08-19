@@ -58,6 +58,15 @@ export function LessonForm({
           </select>
         </label>
 
+        <label className="flex flex-col gap-2.5 text-sm text-muted">
+          Cieľová skupina
+          <select name="audience" defaultValue={lesson?.audience ?? "all"}>
+            <option value="all">Všetci</option>
+            <option value="men">Muži</option>
+            <option value="women">Ženy</option>
+          </select>
+        </label>
+
         <label className="flex flex-col gap-2.5 text-sm text-muted sm:col-span-2">
           Názov lekcie
           <input type="text" name="title" defaultValue={lesson?.title ?? ""} required />

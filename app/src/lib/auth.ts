@@ -32,6 +32,13 @@ export async function requireProfile(): Promise<ProfileWithAccess> {
   // callback.
   if (!profile) redirect("/login");
 
+  // Every non-admin member answers the audience-preference question once,
+  // right after their first sign-in — see /onboarding/audience and
+  // src/lib/gating.ts for what it controls. Admins are exempt outright
+  // (regardless of what's stored) since they never go through the member
+  // gating flow this feeds into.
+  if (!profile.isAdmin && profile.audiencePreference === null) redirect("/onboarding/audience");
+
   const effectiveFullAccess = profile.hasFullAccess || (await hasActiveSubscription(profile.id));
 
   return { ...profile, effectiveFullAccess };

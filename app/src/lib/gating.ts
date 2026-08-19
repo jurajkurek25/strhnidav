@@ -1,4 +1,4 @@
-import type { lessons, userLessonProgress } from "@/lib/db/schema";
+import type { lessons, userLessonProgress, AudiencePreference } from "@/lib/db/schema";
 
 type Lesson = typeof lessons.$inferSelect;
 type Progress = typeof userLessonProgress.$inferSelect;
@@ -96,6 +96,25 @@ function walkChain(
 }
 
 /**
+ * A lesson that isn't part of this member's day-by-day sequence at all
+ * (see the audience split below) has no "previous lesson" to wait on —
+ * it's simply available the moment the paywall allows it, same as if it
+ * were the very first lesson in its own one-lesson track.
+ */
+function freelyWatchableState(
+  lesson: Lesson,
+  progress: Progress | null,
+  hasFullAccess: boolean,
+  purchasedSectionIds: Set<string>
+): ChainResult {
+  if (progress?.completedAt) return { state: "completed", unlocksAt: null };
+  if (!lesson.isFree && !hasFullAccess && !(lesson.sectionId && purchasedSectionIds.has(lesson.sectionId))) {
+    return { state: "locked_paywall", unlocksAt: null };
+  }
+  return { state: "unlocked", unlocksAt: null };
+}
+
+/**
  * Computes every lesson's state from two independent day-by-day chains:
  *
  * - The full course, in day_number order — this is what paid lessons gate
@@ -107,6 +126,15 @@ function walkChain(
  *   it. It only waits on the free lesson before *it*, one day at a time,
  *   same as any other lesson.
  *
+ * Both chains only ever walk the lessons that belong to this member's own
+ * audience sequence — "all" lessons plus whichever of "men"/"women"
+ * matches their `audiencePreference` ("both", or not chosen yet, means
+ * every lesson counts, exactly as if the audience split didn't exist).
+ * Lessons for the *other* gender are never part of anyone's day count;
+ * they're freely watchable instead (see freelyWatchableState) so a member
+ * can browse the opposite track without it blocking, or being blocked by,
+ * their own day-by-day progress.
+ *
  * `courseLessons` must already be sorted ascending by dayNumber and
  * `progressByLessonId` should contain every progress row the caller has for
  * this user.
@@ -115,11 +143,17 @@ export function computeLessonStates(
   courseLessons: Lesson[],
   progressByLessonId: Map<string, Progress>,
   hasFullAccess: boolean,
-  purchasedSectionIds: Set<string> = new Set()
+  purchasedSectionIds: Set<string> = new Set(),
+  audiencePreference: AudiencePreference | null = null
 ): LessonWithState[] {
-  const mainChain = walkChain(courseLessons, progressByLessonId, hasFullAccess, purchasedSectionIds);
+  const bothMode = audiencePreference === null || audiencePreference === "both";
+  const inOwnSequence = (lesson: Lesson) =>
+    bothMode || lesson.audience === "all" || lesson.audience === audiencePreference;
+
+  const sequencedLessons = courseLessons.filter(inOwnSequence);
+  const mainChain = walkChain(sequencedLessons, progressByLessonId, hasFullAccess, purchasedSectionIds);
   const freeChain = walkChain(
-    courseLessons.filter((l) => l.isFree),
+    sequencedLessons.filter((l) => l.isFree),
     progressByLessonId,
     hasFullAccess,
     purchasedSectionIds
@@ -127,6 +161,9 @@ export function computeLessonStates(
 
   return courseLessons.map((lesson) => {
     const progress = progressByLessonId.get(lesson.id) ?? null;
+    if (!inOwnSequence(lesson)) {
+      return { lesson, progress, ...freelyWatchableState(lesson, progress, hasFullAccess, purchasedSectionIds) };
+    }
     const { state, unlocksAt } = (lesson.isFree ? freeChain : mainChain).get(lesson.id)!;
     return { lesson, progress, state, unlocksAt };
   });

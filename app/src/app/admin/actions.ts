@@ -19,7 +19,7 @@ import { uploadPrivateFile } from "@/lib/media";
 import { writeStorageFile, deleteStorageDir, sanitizeFilename } from "@/lib/storage";
 import { packageLessonVideoAsEncryptedHls } from "@/lib/hls";
 import { slugify } from "@/lib/slug";
-import type { TaskType } from "@/lib/db/schema";
+import type { TaskType, LessonAudience } from "@/lib/db/schema";
 
 // ---------------------------------------------------------------------------
 // sections
@@ -161,6 +161,8 @@ export async function saveLesson(formData: FormData) {
   const taskType = String(formData.get("task_type") ?? "text") as TaskType;
   const taskPrompt = String(formData.get("task_prompt") ?? "").trim() || null;
   const isFree = formData.get("is_free") === "on";
+  const rawAudience = String(formData.get("audience") ?? "all");
+  const audience: LessonAudience = rawAudience === "men" || rawAudience === "women" ? rawAudience : "all";
 
   if (!title || !Number.isFinite(requestedDayNumber)) {
     throw new Error("Deň a názov lekcie sú povinné.");
@@ -173,6 +175,7 @@ export async function saveLesson(formData: FormData) {
     taskType,
     taskPrompt,
     isFree,
+    audience,
     updatedAt: new Date(),
   };
 

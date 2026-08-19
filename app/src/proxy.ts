@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { authConfig } from "@/auth.config";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "jurajkurek2006@gmail.com";
-const PROTECTED_PREFIXES = ["/dashboard", "/lesson", "/admin", "/buy"];
+const PROTECTED_PREFIXES = ["/dashboard", "/lesson", "/admin", "/buy", "/onboarding"];
 
 // Edge-safe: instantiated from authConfig only (no Google provider secrets,
 // no Drizzle/pg import — Postgres needs the Node.js runtime). Reads the

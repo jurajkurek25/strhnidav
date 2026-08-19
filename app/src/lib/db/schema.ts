@@ -23,6 +23,13 @@ export type SubscriptionStatus =
   | "incomplete"
   | "incomplete_expired"
   | "paused";
+// Which gender a Lesson is aimed at — "all" (the default) participates in
+// everyone's day-by-day sequence regardless of their AudiencePreference.
+export type LessonAudience = "all" | "men" | "women";
+// A member's one-time choice of which gender-specific track unlocks
+// day-by-day for them; the other gender's Lessons become freely watchable
+// instead (see src/lib/gating.ts). Null means not chosen yet.
+export type AudiencePreference = "men" | "women" | "both";
 
 // One row per signed-in person. Replaces Supabase's auth.users + profiles
 // split — google_id is the OAuth identity, id is our own internal PK that
@@ -36,6 +43,11 @@ export const profiles = pgTable("profiles", {
   isAdmin: boolean("is_admin").notNull().default(false),
   hasFullAccess: boolean("has_full_access").notNull().default(false),
   purchasedAt: timestamp("purchased_at", { withTimezone: true }),
+  // Asked once, right after a member's first sign-in (see
+  // /onboarding/audience) — null until answered. Never forced on admins
+  // (src/lib/auth.ts's requireProfile exempts them outright, regardless of
+  // this column's value).
+  audiencePreference: text("audience_preference").$type<AudiencePreference>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -86,6 +98,11 @@ export const lessons = pgTable("lessons", {
   description: text("description"),
   videoDurationSeconds: integer("video_duration_seconds"),
   isFree: boolean("is_free").notNull().default(false),
+  // "all" (default) counts toward every member's day-by-day sequence.
+  // "men"/"women" only count toward the sequence of a member who chose
+  // that same AudiencePreference — for everyone else it's freely
+  // watchable instead, not part of their day count at all (gating.ts).
+  audience: text("audience").$type<LessonAudience>().notNull().default("all"),
   taskType: text("task_type").$type<TaskType>().notNull().default("text"),
   taskPrompt: text("task_prompt"),
   orderIndex: integer("order_index").notNull().default(0),
