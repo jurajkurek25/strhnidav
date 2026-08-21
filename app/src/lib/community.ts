@@ -3,6 +3,15 @@ import { and, eq, ne, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { communityBlocks, communityConversations, communityMessages } from "@/lib/db/schema";
 
+// Any file type can be attached to a post — this only decides how it's
+// rendered (image/video inline, everything else a download link), never
+// whether it's accepted.
+export function classifyAttachment(mimeType: string): "image" | "video" | "document" {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+  return "document";
+}
+
 // communityConversations.userAId is always the lexicographically smaller
 // of the two profile ids, so a lookup never has to try both orderings.
 export function sortedPair(a: string, b: string): [string, string] {

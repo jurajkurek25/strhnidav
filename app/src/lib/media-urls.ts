@@ -10,3 +10,9 @@ export function publicHlsPlaylistUrl(lessonId: string): string {
 export function publicThumbnailUrl(lessonId: string): string {
   return `/media/thumbnails/${lessonId}/thumbnail.jpg`;
 }
+
+// filePath already includes the "community-posts/…" prefix (see
+// communityPostAttachments.filePath) — this just adds the /media/ route.
+export function publicCommunityAttachmentUrl(filePath: string): string {
+  return `/media/${filePath}`;
+}

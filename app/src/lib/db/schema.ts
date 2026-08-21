@@ -37,7 +37,10 @@ export type GiftCardKind = "course" | "section";
 // default, matching the heterosexual dating framing already used
 // elsewhere in the course, e.g. the "Randenie pre mužov/ženy" Lessons).
 export type CommunityGender = "men" | "women";
-export type ReportTargetType = "post" | "user";
+export type ReportTargetType = "post" | "user" | "comment";
+// How a community post attachment is rendered — image/video inline,
+// anything else as a plain download link.
+export type AttachmentKind = "image" | "video" | "document";
 
 // One row per signed-in person. Replaces Supabase's auth.users + profiles
 // split — google_id is the OAuth identity, id is our own internal PK that
@@ -360,10 +363,47 @@ export const communityPosts = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    // Nullable in spirit only — a post with attachments but no caption
+    // stores "" here, never a real NULL, so this stays NOT NULL like the
+    // rest of the app's text columns.
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("community_posts_created_idx").on(t.createdAt)]
+);
+
+// Media attached to a post — any file type is accepted at upload; kind is
+// inferred from the browser-reported MIME type purely to pick a renderer
+// (image/video inline, everything else a plain download link). Stored
+// under public/community-posts/{postId}/… and served by
+// src/app/media/[...path]/route.ts, same as lesson thumbnails — community
+// content isn't paywalled, so it doesn't need the private/access-checked
+// pipeline lesson documents use.
+export const communityPostAttachments = pgTable(
+  "community_post_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+    filePath: text("file_path").notNull(),
+    fileName: text("file_name").notNull(),
+    mimeType: text("mime_type").notNull(),
+    kind: text("kind").$type<AttachmentKind>().notNull(),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("community_post_attachments_post_idx").on(t.postId)]
+);
+
+export const communityComments = pgTable(
+  "community_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("community_comments_post_idx").on(t.postId, t.createdAt)]
 );
 
 // One row per (blocker, blocked) pair. Blocking is one-directional to set
@@ -382,17 +422,18 @@ export const communityBlocks = pgTable(
   (t) => [unique().on(t.blockerId, t.blockedId)]
 );
 
-// A member flagging a post or another member for admin review — see
-// /admin/community/reports. Deliberately minimal (no auto-hide, no
+// A member flagging a post, a comment, or another member for admin review
+// — see /admin/community/reports. Deliberately minimal (no auto-hide, no
 // account suspension yet): a report only ever surfaces the content to an
 // admin, who deletes/resolves it manually.
 export const communityReports = pgTable("community_reports", {
   id: uuid("id").primaryKey().defaultRandom(),
   reporterId: uuid("reporter_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   targetType: text("target_type").$type<ReportTargetType>().notNull(),
-  // Either a community_posts.id (targetType "post") or a profiles.id
-  // (targetType "user") — no FK, since the reported row (or a still-valid
-  // report about an already-deleted post) must stay readable either way.
+  // A community_posts.id, community_comments.id, or profiles.id depending
+  // on targetType — no FK, since the reported row (or a still-valid
+  // report about an already-deleted post/comment) must stay readable
+  // either way.
   targetId: uuid("target_id").notNull(),
   reason: text("reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

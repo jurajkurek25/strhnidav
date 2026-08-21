@@ -8,13 +8,22 @@ import { db } from "@/lib/db";
 import {
   profiles,
   communityPosts,
+  communityPostAttachments,
+  communityComments,
   communityBlocks,
   communityReports,
   communityMessages,
   type CommunityGender,
   type ReportTargetType,
 } from "@/lib/db/schema";
-import { communityAreBlocked, getOrCreateConversation } from "@/lib/community";
+import { communityAreBlocked, getOrCreateConversation, classifyAttachment } from "@/lib/community";
+import { writeStorageFile, deleteStorageDir, sanitizeFilename } from "@/lib/storage";
+
+// Per-file cap on post attachments — generous for photos/PDFs/short clips
+// while keeping a runaway upload from filling the server's disk, since
+// this is open to every logged-in member (including free-tier) with no
+// review before it lands on disk.
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 
 // Shown once at /community/onboarding — separate from the course-content
 // audience preference (src/app/onboarding/actions.ts), since this is
@@ -51,17 +60,63 @@ export async function updateBio(formData: FormData) {
 export async function createPost(formData: FormData) {
   const profile = await requireCommunityProfile();
   const body = String(formData.get("body") ?? "").trim();
-  if (!body) return;
+  const files = formData.getAll("attachments").filter((f): f is File => f instanceof File && f.size > 0);
+  if (!body && files.length === 0) return;
 
-  await db.insert(communityPosts).values({ userId: profile.id, body });
+  const [post] = await db
+    .insert(communityPosts)
+    .values({ userId: profile.id, body })
+    .returning({ id: communityPosts.id });
+  if (!post) return;
+
+  let orderIndex = 0;
+  for (const file of files) {
+    // Silently skipped rather than rejecting the whole post — the other
+    // attachments and the caption still deserve to go through.
+    if (file.size > MAX_ATTACHMENT_BYTES) continue;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const relPath = `community-posts/${post.id}/${Date.now()}-${sanitizeFilename(file.name)}`;
+    await writeStorageFile(`public/${relPath}`, buffer);
+    await db.insert(communityPostAttachments).values({
+      postId: post.id,
+      filePath: relPath,
+      fileName: file.name,
+      mimeType: file.type || "application/octet-stream",
+      kind: classifyAttachment(file.type || ""),
+      orderIndex: orderIndex++,
+    });
+  }
+
   revalidatePath("/community");
 }
 
 export async function deletePost(postId: string) {
   const profile = await requireCommunityProfile();
-  await db
+  const [deleted] = await db
     .delete(communityPosts)
-    .where(and(eq(communityPosts.id, postId), eq(communityPosts.userId, profile.id)));
+    .where(and(eq(communityPosts.id, postId), eq(communityPosts.userId, profile.id)))
+    .returning({ id: communityPosts.id });
+  if (deleted) await deleteStorageDir(`public/community-posts/${postId}`);
+  revalidatePath("/community");
+}
+
+// ---------------------------------------------------------------------------
+// comments
+// ---------------------------------------------------------------------------
+export async function createComment(postId: string, formData: FormData) {
+  const profile = await requireCommunityProfile();
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return;
+
+  await db.insert(communityComments).values({ postId, userId: profile.id, body });
+  revalidatePath("/community");
+}
+
+export async function deleteComment(commentId: string) {
+  const profile = await requireCommunityProfile();
+  await db
+    .delete(communityComments)
+    .where(and(eq(communityComments.id, commentId), eq(communityComments.userId, profile.id)));
   revalidatePath("/community");
 }
 
