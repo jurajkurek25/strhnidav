@@ -53,13 +53,16 @@ export async function requireAdmin(): Promise<ProfileWithAccess> {
 
 /**
  * Same as requireProfile(), plus a one-time redirect to
- * /community/onboarding for anyone (member or admin) who hasn't set a
- * communityGender yet. Use at the top of every /community/* page — but
- * NOT in /community/onboarding itself, which would otherwise redirect
- * straight back to itself forever.
+ * /community/onboarding for anyone who hasn't set a communityGender yet.
+ * Use at the top of every /community/* page — but NOT in
+ * /community/onboarding itself, which would otherwise redirect straight
+ * back to itself forever. Admins are exempt (they can post/comment/message
+ * right away, e.g. for announcements) — see the notFound() guard in
+ * /community/profile/[userId] for the matching exemption on the display
+ * side, since an admin's own profile has no communityGender set either.
  */
 export async function requireCommunityProfile(): Promise<ProfileWithAccess> {
   const profile = await requireProfile();
-  if (profile.communityGender === null) redirect("/community/onboarding");
+  if (!profile.isAdmin && profile.communityGender === null) redirect("/community/onboarding");
   return profile;
 }

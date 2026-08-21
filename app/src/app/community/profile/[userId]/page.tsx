@@ -22,10 +22,15 @@ export default async function CommunityProfilePage({
       avatarUrl: profiles.avatarUrl,
       bio: profiles.bio,
       communityGender: profiles.communityGender,
+      isAdmin: profiles.isAdmin,
     })
     .from(profiles)
     .where(eq(profiles.id, userId));
-  if (!target || target.communityGender === null) notFound();
+  // A regular member without a community profile hasn't joined the
+  // community and has no page here. Admins are the one exception — they
+  // can post/comment without ever setting a communityGender (see
+  // requireCommunityProfile), so their own profile must still render.
+  if (!target || (target.communityGender === null && !target.isAdmin)) notFound();
 
   const isOwnProfile = target.id === profile.id;
 

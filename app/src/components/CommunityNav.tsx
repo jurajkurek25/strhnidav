@@ -5,6 +5,7 @@ import Link from "next/link";
 
 const links = [
   { href: "/community", label: "Feed" },
+  { href: "/community/members", label: "Členovia" },
   { href: "/community/messages", label: "Správy" },
   { href: "/community/matches", label: "Zhody" },
 ];

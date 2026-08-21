@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { communityReports, communityPosts, communityComments, profiles } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { AdminNav } from "@/components/AdminNav";
+import { AdminCommunityNav } from "@/components/AdminCommunityNav";
 import { resolveReport, adminDeletePost, adminDeleteComment } from "@/app/admin/community-actions";
 
 export default async function AdminCommunityReportsPage() {
@@ -53,6 +54,7 @@ export default async function AdminCommunityReportsPage() {
         <div className="eyebrow mb-6">Administrácia</div>
         <h1 className="font-display text-[clamp(28px,4vw,38px)] font-semibold">Nahlásenia z komunity</h1>
         <AdminNav active="/admin/community/reports" />
+        <AdminCommunityNav active="/admin/community/reports" />
 
         {enriched.length === 0 && <p className="text-sm text-muted">Žiadne otvorené nahlásenia.</p>}
 

@@ -67,6 +67,11 @@ export const profiles = pgTable("profiles", {
   // Both null until the member's first visit to /community.
   bio: text("bio"),
   communityGender: text("community_gender").$type<CommunityGender>(),
+  // Whether this member shows up in /community/members — admin-only
+  // toggle, set from /admin/community/members. Doesn't affect their own
+  // ability to post, comment, or message; it only hides them from the
+  // member directory other people browse.
+  communityListed: boolean("community_listed").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

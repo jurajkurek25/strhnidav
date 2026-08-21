@@ -20,11 +20,9 @@ export function Header({
           <Logo size={26} wordmarkClassName="text-cream tracking-wide text-[15px] sm:text-[19px]" />
         </Link>
         <div className="flex min-w-0 items-center gap-2 sm:gap-7">
-          {!isAdmin && (
-            <Link href="/community" className="hidden text-sm text-muted hover:text-cream sm:inline">
-              Komunita
-            </Link>
-          )}
+          <Link href="/community" className="hidden text-sm text-muted hover:text-cream sm:inline">
+            Komunita
+          </Link>
           {!isAdmin && !hasFullAccess && (
             <Link href="/dashboard/unlock" className="btn btn-sm !px-3 whitespace-nowrap sm:!px-5">
               <span className="hidden sm:inline">Odomkni celý kurz</span>

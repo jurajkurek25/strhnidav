@@ -38,6 +38,7 @@ export default async function CommunityFeedPage() {
         authorId: profiles.id,
         authorName: profiles.fullName,
         authorAvatar: profiles.avatarUrl,
+        authorIsAdmin: profiles.isAdmin,
       })
       .from(communityPosts)
       .innerJoin(profiles, eq(profiles.id, communityPosts.userId))
@@ -65,6 +66,7 @@ export default async function CommunityFeedPage() {
             authorId: profiles.id,
             authorName: profiles.fullName,
             authorAvatar: profiles.avatarUrl,
+            authorIsAdmin: profiles.isAdmin,
           })
           .from(communityComments)
           .innerJoin(profiles, eq(profiles.id, communityComments.userId))
@@ -129,6 +131,7 @@ export default async function CommunityFeedPage() {
                     <span className="font-display text-[15px] font-medium text-cream">
                       {post.authorName ?? "Člen"}
                     </span>
+                    {post.authorIsAdmin && <span className="tag tag-good !py-0.5 !text-[10px]">Admin</span>}
                   </a>
                   <span className="text-xs text-muted">{timeAgo(post.createdAt)}</span>
                 </div>
@@ -163,7 +166,11 @@ export default async function CommunityFeedPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] leading-relaxed text-cream">
-                          <span className="font-medium">{c.authorName ?? "Člen"}</span> {c.body}
+                          <span className="font-medium">{c.authorName ?? "Člen"}</span>{" "}
+                          {c.authorIsAdmin && (
+                            <span className="tag tag-good !py-0.5 !text-[10px]">Admin</span>
+                          )}{" "}
+                          {c.body}
                         </p>
                         <div className="mt-1 flex gap-3 text-[11px] text-muted">
                           <span>{timeAgo(c.createdAt)}</span>
