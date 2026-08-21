@@ -4,19 +4,14 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 const links = [
-  { href: "/admin", label: "Prehľad" },
-  { href: "/admin/lessons", label: "Lekcie" },
-  { href: "/admin/sections", label: "Sekcie" },
-  { href: "/admin/users", label: "Členovia" },
-  { href: "/admin/community/reports", label: "Komunita" },
+  { href: "/community", label: "Feed" },
+  { href: "/community/messages", label: "Správy" },
+  { href: "/community/matches", label: "Zhody" },
 ];
 
-export function AdminNav({ active }: { active: string }) {
+export function CommunityNav({ active }: { active: string }) {
   const activeRef = useRef<HTMLAnchorElement>(null);
 
-  // On narrow screens the tab row scrolls horizontally (4 tabs don't fit at
-  // ~320px) — make sure the active tab is actually visible on load instead
-  // of requiring a manual scroll to find it.
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
   }, []);

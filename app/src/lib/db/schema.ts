@@ -30,6 +30,14 @@ export type LessonAudience = "all" | "men" | "women";
 // day-by-day for them; the other gender's Lessons become freely watchable
 // instead (see src/lib/gating.ts). Null means not chosen yet.
 export type AudiencePreference = "men" | "women" | "both";
+// Which gift a giftCards row grants once redeemed.
+export type GiftCardKind = "course" | "section";
+// A member's own gender within the community feature (src/app/community) —
+// drives who they're shown as an AI-suggested match (opposite gender by
+// default, matching the heterosexual dating framing already used
+// elsewhere in the course, e.g. the "Randenie pre mužov/ženy" Lessons).
+export type CommunityGender = "men" | "women";
+export type ReportTargetType = "post" | "user";
 
 // One row per signed-in person. Replaces Supabase's auth.users + profiles
 // split — google_id is the OAuth identity, id is our own internal PK that
@@ -48,6 +56,14 @@ export const profiles = pgTable("profiles", {
   // (src/lib/auth.ts's requireProfile exempts them outright, regardless of
   // this column's value).
   audiencePreference: text("audience_preference").$type<AudiencePreference>(),
+  // Community feature (src/app/community) only, deliberately separate from
+  // audiencePreference above — that field is about which Lessons unlock
+  // for someone, this is about who they show up as / want to be matched
+  // with in the community, and the two don't have to agree (e.g. someone
+  // picks "both" for content but still has a definite community gender).
+  // Both null until the member's first visit to /community.
+  bio: text("bio"),
+  communityGender: text("community_gender").$type<CommunityGender>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -306,3 +322,107 @@ export const freeAccessGrants = pgTable("free_access_grants", {
   grantedBy: uuid("granted_by").references(() => profiles.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// gift cards
+// ---------------------------------------------------------------------------
+
+// A course/section access bought as a gift for someone else — never for a
+// Predplatné (subscription), since that's a recurring relationship with
+// the buyer's own payment method, not a one-time thing to hand off. code
+// is what the recipient types in at /dashboard/gift to redeem it; it's
+// generated once the underlying Stripe payment actually succeeds (see the
+// webhook), never before, so a code is never issued for an unpaid card.
+export const giftCards = pgTable("gift_cards", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull().unique(),
+  kind: text("kind").$type<GiftCardKind>().notNull(),
+  sectionId: uuid("section_id").references(() => sections.id, { onDelete: "cascade" }),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("eur"),
+  purchasedByUserId: uuid("purchased_by_user_id").references(() => profiles.id, { onDelete: "set null" }),
+  stripeSessionId: text("stripe_session_id").unique(),
+  status: text("status").$type<PaymentStatus>().notNull().default("pending"),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
+  redeemedByUserId: uuid("redeemed_by_user_id").references(() => profiles.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// community — profiles (see profiles.bio/communityGender), a shared feed,
+// direct messages, and the safety valves (block/report) that a feature
+// where paying strangers message each other and get matched genuinely
+// needs, not just the fun parts.
+// ---------------------------------------------------------------------------
+
+export const communityPosts = pgTable(
+  "community_posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("community_posts_created_idx").on(t.createdAt)]
+);
+
+// One row per (blocker, blocked) pair. Blocking is one-directional to set
+// up (A can block B without B's cooperation) but its effects are checked
+// both ways everywhere it matters — see communityAreBlocked() in
+// src/lib/community.ts — so a block always stops messages and hides
+// content in both directions once either side has blocked the other.
+export const communityBlocks = pgTable(
+  "community_blocks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    blockerId: uuid("blocker_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    blockedId: uuid("blocked_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.blockerId, t.blockedId)]
+);
+
+// A member flagging a post or another member for admin review — see
+// /admin/community/reports. Deliberately minimal (no auto-hide, no
+// account suspension yet): a report only ever surfaces the content to an
+// admin, who deletes/resolves it manually.
+export const communityReports = pgTable("community_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reporterId: uuid("reporter_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  targetType: text("target_type").$type<ReportTargetType>().notNull(),
+  // Either a community_posts.id (targetType "post") or a profiles.id
+  // (targetType "user") — no FK, since the reported row (or a still-valid
+  // report about an already-deleted post) must stay readable either way.
+  targetId: uuid("target_id").notNull(),
+  reason: text("reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+});
+
+// One row per unordered pair of members who have ever messaged each
+// other. userAId is always the lexicographically smaller profile id (see
+// conversationIdFor() in src/lib/community.ts) so a lookup never has to
+// try both orderings.
+export const communityConversations = pgTable(
+  "community_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userAId: uuid("user_a_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    userBId: uuid("user_b_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.userAId, t.userBId)]
+);
+
+export const communityMessages = pgTable(
+  "community_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id").notNull().references(() => communityConversations.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [index("community_messages_conversation_idx").on(t.conversationId, t.createdAt)]
+);

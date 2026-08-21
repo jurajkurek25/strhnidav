@@ -3,7 +3,8 @@ import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { profiles, payments, sectionPurchases, subscriptions, type SubscriptionStatus } from "@/lib/db/schema";
+import { profiles, payments, sectionPurchases, subscriptions, giftCards, type SubscriptionStatus, type GiftCardKind } from "@/lib/db/schema";
+import { generateUniqueGiftCardCode } from "@/lib/gift-cards";
 
 function customerId(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): string | null {
   if (!customer) return null;
@@ -72,7 +73,33 @@ export async function POST(request: Request) {
     const userId = session.client_reference_id ?? session.metadata?.user_id;
     const sectionId = session.metadata?.section_id;
 
-    if (session.mode === "subscription" && userId && typeof session.subscription === "string") {
+    if (session.metadata?.gift_card === "true" && userId) {
+      // Checked before the plain sectionId/course branches below — a gift
+      // card must never fall through to those and grant the *buyer*
+      // access; it grants a redeemable code instead, applied to whoever
+      // redeems it later (see /dashboard/gift's redeemGiftCard action).
+      const kind = session.metadata?.gift_kind as GiftCardKind | undefined;
+      const giftSectionId = session.metadata?.gift_section_id ?? null;
+      if (kind === "course" || kind === "section") {
+        const code = await generateUniqueGiftCardCode();
+        await db
+          .insert(giftCards)
+          .values({
+            code,
+            kind,
+            sectionId: kind === "section" ? giftSectionId : null,
+            amountCents: session.amount_total ?? 0,
+            currency: session.currency ?? "eur",
+            purchasedByUserId: userId,
+            stripeSessionId: session.id,
+            status: "paid",
+          })
+          .onConflictDoUpdate({
+            target: giftCards.stripeSessionId,
+            set: { status: "paid" },
+          });
+      }
+    } else if (session.mode === "subscription" && userId && typeof session.subscription === "string") {
       const custId = customerId(session.customer);
       if (custId) {
         await db

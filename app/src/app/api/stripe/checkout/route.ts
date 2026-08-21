@@ -12,19 +12,31 @@ export async function POST(request: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  if (body?.consent !== true) {
-    return NextResponse.json({ error: "consent-required" }, { status: 400 });
-  }
   const sectionId: string | undefined =
     typeof body?.sectionId === "string" ? body.sectionId : undefined;
   const isSubscription = body?.plan === "subscription";
+  const isGiftCard = body?.giftCard === true;
+  const giftKind: "course" | "section" | undefined =
+    body?.giftKind === "course" || body?.giftKind === "section" ? body.giftKind : undefined;
+
+  // The čl. 7 digital-content withdrawal-right consent only makes sense
+  // when the buyer themselves is about to receive immediate access to
+  // Lessons — a gift-card buyer never accesses anything themselves (the
+  // redeemer does, later, separately), so /dashboard/gift doesn't show
+  // that checkbox and this request never carries consent:true.
+  if (!isGiftCard && body?.consent !== true) {
+    return NextResponse.json({ error: "consent-required" }, { status: 400 });
+  }
 
   const [profile] = await db
     .select({ hasFullAccess: profiles.hasFullAccess, email: profiles.email })
     .from(profiles)
     .where(eq(profiles.id, session.user.id));
 
-  if (profile?.hasFullAccess || (await hasActiveSubscription(session.user.id))) {
+  // A gift card is for someone else — the buyer's own access status is
+  // irrelevant, so this is the one purchase type that skips the
+  // "already purchased" gate below.
+  if (!isGiftCard && (profile?.hasFullAccess || (await hasActiveSubscription(session.user.id)))) {
     return NextResponse.json({ error: "already-purchased" }, { status: 400 });
   }
 
@@ -41,6 +53,71 @@ export async function POST(request: Request) {
     // up here.
     allow_promotion_codes: true,
   };
+
+  if (isGiftCard) {
+    if (giftKind === "section") {
+      if (!sectionId) return NextResponse.json({ error: "not-found" }, { status: 404 });
+      const [section] = await db.select().from(sections).where(eq(sections.id, sectionId));
+      if (!section) return NextResponse.json({ error: "not-found" }, { status: 404 });
+
+      const checkoutSession = await stripe.checkout.sessions.create({
+        ...commonFields,
+        metadata: {
+          user_id: session.user.id,
+          gift_card: "true",
+          gift_kind: "section",
+          gift_section_id: sectionId,
+        },
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "eur",
+              unit_amount: section.priceCents,
+              product_data: {
+                name: `Strhni Dav — darček: blok „${section.title}“`,
+                description: "Darčeková karta na prístup k jednému bloku kurzu.",
+              },
+            },
+          },
+        ],
+        success_url: `${siteUrl}/dashboard/gift?purchase=success`,
+        cancel_url: `${siteUrl}/dashboard/gift?status=cancelled`,
+      });
+
+      return NextResponse.json({ url: checkoutSession.url });
+    }
+
+    if (giftKind === "course") {
+      const checkoutSession = await stripe.checkout.sessions.create({
+        ...commonFields,
+        metadata: {
+          user_id: session.user.id,
+          gift_card: "true",
+          gift_kind: "course",
+        },
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "eur",
+              unit_amount: await getCoursePriceCents(),
+              product_data: {
+                name: "Strhni Dav — darček: celý kurz",
+                description: "Darčeková karta na doživotný prístup k celému kurzu.",
+              },
+            },
+          },
+        ],
+        success_url: `${siteUrl}/dashboard/gift?purchase=success`,
+        cancel_url: `${siteUrl}/dashboard/gift?status=cancelled`,
+      });
+
+      return NextResponse.json({ url: checkoutSession.url });
+    }
+
+    return NextResponse.json({ error: "invalid-gift" }, { status: 400 });
+  }
 
   if (isSubscription) {
     const checkoutSession = await stripe.checkout.sessions.create({

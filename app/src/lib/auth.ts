@@ -50,3 +50,16 @@ export async function requireAdmin(): Promise<ProfileWithAccess> {
   if (!profile.isAdmin) redirect("/dashboard");
   return profile;
 }
+
+/**
+ * Same as requireProfile(), plus a one-time redirect to
+ * /community/onboarding for anyone (member or admin) who hasn't set a
+ * communityGender yet. Use at the top of every /community/* page — but
+ * NOT in /community/onboarding itself, which would otherwise redirect
+ * straight back to itself forever.
+ */
+export async function requireCommunityProfile(): Promise<ProfileWithAccess> {
+  const profile = await requireProfile();
+  if (profile.communityGender === null) redirect("/community/onboarding");
+  return profile;
+}

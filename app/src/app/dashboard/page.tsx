@@ -68,11 +68,12 @@ export default async function DashboardPage() {
           )}
         </p>
 
-        {stripeCustomerId && (
-          <div className="mt-5">
-            <ManageSubscriptionButton />
-          </div>
-        )}
+        <div className="mt-5 flex flex-wrap items-center gap-5">
+          {stripeCustomerId && <ManageSubscriptionButton />}
+          <a href="/dashboard/gift" className="text-sm text-muted underline hover:text-cream">
+            Darovať kurz niekomu
+          </a>
+        </div>
 
         {courseCompleted && (
           <div className="card mt-10 flex flex-wrap items-center justify-between gap-6 p-8">
